@@ -174,7 +174,7 @@
           <!-- INITIAL ENCRYPTION PILL (WHATSAPP STYLE) -->
           <div class="flex justify-center my-1">
             <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-medium border border-slate-200/60 dark:border-slate-700/60">
-              🔒 End-to-end encrypted • Anti-screenshot enabled
+              🔒 1-on-1 Chats: Offline SMS fallback enabled
             </span>
           </div>
 
@@ -184,13 +184,53 @@
               AI
             </div>
             <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-              Hey! I'm Resence AI. Ask me anything, or tap "Online" above to test what happens when your data turns off.
+              Hey! I'm Resence AI. 1-on-1 chats use offline SMS fallback when data drops. Groups & Communities run online-only!
+            </div>
+          </div>
+        </div>
+
+        <!-- COMMUNITIES FEED (HIDDEN INITIALLY) -->
+        <div id="mockCommunityFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2.5 mb-2.5">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                G
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-none">GLBIM Greater Noida</h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Official Campus Community • 100% Online</p>
+              </div>
+            </div>
+
+            <!-- SUB-GROUPS LIST -->
+            <div class="space-y-1.5 pl-2 border-l-2 border-emerald-500/30">
+              <div class="p-2 rounded-xl bg-white dark:bg-slate-800/60 flex items-center justify-between border border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm">📢</span>
+                  <div>
+                    <p class="font-bold text-slate-900 dark:text-white text-[11px]">Announcements</p>
+                    <p class="text-[10px] text-slate-400">Exam schedules & notices</p>
+                  </div>
+                </div>
+                <span class="text-[9px] font-semibold text-emerald-500">Admin only</span>
+              </div>
+
+              <div class="p-2 rounded-xl bg-white dark:bg-slate-800/60 flex items-center justify-between border border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm">💬</span>
+                  <div>
+                    <p class="font-bold text-slate-900 dark:text-white text-[11px]">BCA AI/ML Sem 3</p>
+                    <p class="text-[10px] text-slate-400">Class study discussions</p>
+                  </div>
+                </div>
+                <span class="text-[9px] text-slate-400">42 members</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- INPUT BAR -->
-        <div class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
+        <div id="mockInputBar" class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
           <form onsubmit="sendMockMessage(event)" class="flex items-center gap-2">
             <!-- ATTACH MEDIA BUTTON -->
             <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio are supported when online).')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all">
@@ -206,6 +246,26 @@
             </button>
           </form>
         </div>
+
+        <!-- WHATSAPP-STYLE 4-TAB BOTTOM NAVIGATION -->
+        <nav class="px-3 py-2 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/80 dark:bg-[#0A0D14] flex items-center justify-around text-center select-none">
+          <button onclick="switchTab('chats')" id="tabChats" class="flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all">
+            <span class="text-sm">💬</span>
+            <span class="text-[9px] mt-0.5">Chats</span>
+          </button>
+          <button onclick="switchTab('communities')" id="tabCommunities" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+            <span class="text-sm">👥</span>
+            <span class="text-[9px] mt-0.5">Communities</span>
+          </button>
+          <button onclick="switchTab('ai')" id="tabAi" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+            <span class="text-sm">🤖</span>
+            <span class="text-[9px] mt-0.5">Resence AI</span>
+          </button>
+          <button onclick="switchTab('vault')" id="tabVault" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+            <span class="text-sm">🔒</span>
+            <span class="text-[9px] mt-0.5">Vault</span>
+          </button>
+        </nav>
 
       </div>
     </div>
@@ -469,6 +529,46 @@
           feed.appendChild(aiBubble);
           feed.scrollTop = feed.scrollHeight;
         }, 500);
+      }
+    }
+
+    function switchTab(tab) {
+      const chatFeed = document.getElementById('mockChatFeed');
+      const commFeed = document.getElementById('mockCommunityFeed');
+      const inputBar = document.getElementById('mockInputBar');
+      const chatTitle = document.getElementById('mockChatTitle');
+      const chatStatus = document.getElementById('mockChatStatus');
+
+      const tabs = ['Chats', 'Communities', 'Ai', 'Vault'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab' + t);
+        if (btn) btn.className = "flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all";
+      });
+
+      if (tab === 'chats') {
+        document.getElementById('tabChats').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        chatFeed.classList.remove('hidden');
+        commFeed.classList.add('hidden');
+        inputBar.classList.remove('hidden');
+        chatTitle.textContent = "Resence AI";
+        chatStatus.textContent = isOnline ? "Ready to assist" : "Paused (No Internet)";
+      } else if (tab === 'communities') {
+        document.getElementById('tabCommunities').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        chatFeed.classList.add('hidden');
+        commFeed.classList.remove('hidden');
+        inputBar.classList.add('hidden');
+        chatTitle.textContent = "Campus Communities";
+        chatStatus.textContent = "100% Online (No SMS used)";
+      } else if (tab === 'ai') {
+        document.getElementById('tabAi').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        chatFeed.classList.remove('hidden');
+        commFeed.classList.add('hidden');
+        inputBar.classList.remove('hidden');
+        chatTitle.textContent = "Resence AI Companion";
+        chatStatus.textContent = isOnline ? "Active • 2.5 Flash" : "Disabled (Offline)";
+      } else if (tab === 'vault') {
+        document.getElementById('tabVault').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        promptGhostPin();
       }
     }
 
