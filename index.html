@@ -1663,7 +1663,7 @@
 
     function openMessageActions(msgId) {
       const msgs = threadMessages[activeThreadId] || [];
-      const target = msgs.find(m => m.id === msgId);
+      const target = msgs.find(m => String(m.id) === String(msgId));
       if (!target) return;
 
       pendingMessageTarget = target;
@@ -1707,7 +1707,7 @@
 
       // 2. Remove locally
       if (threadMessages[convId]) {
-        threadMessages[convId] = threadMessages[convId].filter(m => m.id !== msgId);
+        threadMessages[convId] = threadMessages[convId].filter(m => String(m.id) !== String(msgId));
         localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
       }
 
@@ -2549,17 +2549,21 @@
         contentHtml = `<p class="leading-relaxed break-words">${msg.text || ''}</p>`;
       }
 
+      div.id = `bubble-${msg.id}`;
       const timeStr = formatTime(msg.created_at || msg.time);
       const transportStr = msg.transport || 'Encrypted Internet';
 
       if (msg.type === 'outgoing') {
-        div.className = "flex justify-end";
+        div.className = "flex justify-end select-none";
         div.innerHTML = `
-          <div class="max-w-[85%] sm:max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
+          <div oncontextmenu="event.preventDefault(); openMessageActions('${msg.id}');" class="relative max-w-[85%] sm:max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
             ${contentHtml}
-            <div class="flex items-center justify-end gap-1.5 text-[10px] font-mono text-slate-950/75 text-right pt-0.5">
+            <div class="flex items-center justify-end gap-2 text-[10px] font-mono text-slate-950/80 text-right pt-0.5">
               <span>${timeStr}</span>
               <span class="text-xs font-bold leading-none">✓✓</span>
+              <button type="button" onclick="event.stopPropagation(); openMessageActions('${msg.id}')" class="w-5 h-5 flex items-center justify-center rounded-full hover:bg-black/15 active:scale-90 text-slate-950 transition-all font-bold" title="Delete / Options">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
             </div>
           </div>
         `;
@@ -2578,16 +2582,32 @@
           </div>
         `;
       } else {
-        div.className = "flex items-start gap-2 max-w-[85%] sm:max-w-[80%]";
+        div.className = "flex items-start gap-2 max-w-[85%] sm:max-w-[80%] select-none";
         div.innerHTML = `
-          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1">
+          <div oncontextmenu="event.preventDefault(); openMessageActions('${msg.id}');" class="relative p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1 flex-1">
             ${contentHtml}
-            <div class="flex items-center justify-end gap-1.5 text-[10px] font-mono text-slate-400 text-right pt-0.5">
+            <div class="flex items-center justify-end gap-2 text-[10px] font-mono text-slate-400 text-right pt-0.5">
               <span>${timeStr}</span>
               <span class="text-[9px] opacity-60">• ${transportStr}</span>
+              <button type="button" onclick="event.stopPropagation(); openMessageActions('${msg.id}')" class="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/15 active:scale-90 text-slate-300 transition-all font-bold" title="Delete / Options">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
             </div>
           </div>
         `;
+      }
+
+      // Mobile touch long-press (hold 450ms to open delete menu)
+      if (msg.type !== 'ai') {
+        let pressTimer = null;
+        div.addEventListener('touchstart', () => {
+          pressTimer = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(40);
+            openMessageActions(msg.id);
+          }, 450);
+        }, { passive: true });
+        div.addEventListener('touchend', () => { if (pressTimer) clearTimeout(pressTimer); });
+        div.addEventListener('touchmove', () => { if (pressTimer) clearTimeout(pressTimer); });
       }
 
       container.appendChild(div);
