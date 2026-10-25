@@ -1397,6 +1397,22 @@
             currentUserProfile = { ...currentUserProfile, ...prof };
             localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
             applyProfileToUI(currentUserProfile);
+
+            // Multi-device sync for cleared chats & deleted messages
+            if (prof.public_key) {
+              try {
+                const cloudMeta = JSON.parse(prof.public_key);
+                if (cloudMeta && typeof cloudMeta === 'object') {
+                  if (cloudMeta.clearedChats) {
+                    userClearedChats = { ...userClearedChats, ...cloudMeta.clearedChats };
+                  }
+                  if (Array.isArray(cloudMeta.deletedMsgIds)) {
+                    cloudMeta.deletedMsgIds.forEach(id => userDeletedMessageIds.add(String(id)));
+                  }
+                  saveUserDeletionState(false);
+                }
+              } catch (e) {}
+            }
           }
         }
       } catch (e) {
@@ -1483,6 +1499,7 @@
       } else if (enteredPin === masterPin) {
         enteredPin = "";
         updatePinDots();
+        loadUserDeletionState();
         showView('viewMainApp');
         applyProfileToUI(currentUserProfile);
         renderConversationsList();
@@ -1608,7 +1625,12 @@
         }
 
         // Get latest message preview and formatted timestamp
-        const msgs = threadMessages[thread.id] || [];
+        let msgs = threadMessages[thread.id] || [];
+        if (thread.id !== 'ai-companion') {
+          msgs = msgs.filter(m => isMessageVisibleToMe(m, thread.id));
+        } else {
+          msgs = msgs.filter(m => m.type === 'ai' || (m.type === 'outgoing' && !m.conversation_id));
+        }
         const lastMsg = msgs[msgs.length - 1];
         let previewText = thread.bio || 'Available on WeResence';
         let previewTime = (thread.type === 'AI') ? 'Live' : 'E2EE';
@@ -1658,6 +1680,75 @@
 
 
 
+    // ========================================================
+    // DELETION & CLEARED CHATS MANAGEMENT (WHATSAPP ARCHITECTURE)
+    // ========================================================
+    let userDeletedMessageIds = new Set();
+    let userClearedChats = {}; // { [convId]: isoTimestamp }
+
+    function getStorageUserKey() {
+      return currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id || 'default') : 'default';
+    }
+
+    function loadUserDeletionState() {
+      const userKey = getStorageUserKey();
+      try {
+        const d = localStorage.getItem(`weresence_deleted_msgs_${userKey}`);
+        if (d) userDeletedMessageIds = new Set(JSON.parse(d));
+      } catch (e) {}
+
+      try {
+        const c = localStorage.getItem(`weresence_cleared_chats_${userKey}`);
+        if (c) userClearedChats = JSON.parse(c);
+      } catch (e) {}
+    }
+
+    function saveUserDeletionState(syncToCloud = true) {
+      const userKey = getStorageUserKey();
+      try {
+        localStorage.setItem(`weresence_deleted_msgs_${userKey}`, JSON.stringify(Array.from(userDeletedMessageIds)));
+        localStorage.setItem(`weresence_cleared_chats_${userKey}`, JSON.stringify(userClearedChats));
+      } catch (e) {}
+
+      // Multi-device sync: save to current user's profile metadata in Supabase
+      if (syncToCloud && dbClient && currentUserProfile && currentUserProfile.id) {
+        try {
+          const syncMeta = {
+            clearedChats: userClearedChats,
+            deletedMsgIds: Array.from(userDeletedMessageIds).slice(-200)
+          };
+          dbClient.from('profiles').update({ public_key: JSON.stringify(syncMeta) }).eq('id', currentUserProfile.id).then(() => {}).catch(() => {});
+        } catch (e) {}
+      }
+    }
+
+    function recordMessageDeletedForMe(msgId) {
+      userDeletedMessageIds.add(String(msgId));
+      saveUserDeletionState(true);
+    }
+
+    function recordChatCleared(convId) {
+      userClearedChats[convId] = new Date().toISOString();
+      saveUserDeletionState(true);
+    }
+
+    function isMessageVisibleToMe(msg, convId) {
+      if (!msg) return false;
+      const targetConvId = convId || msg.conversation_id;
+      const idStr = String(msg.id);
+      if (userDeletedMessageIds.has(idStr)) return false;
+
+      if (targetConvId && userClearedChats[targetConvId]) {
+        const msgTime = new Date(msg.created_at || msg.time || 0).getTime();
+        const clearTime = new Date(userClearedChats[targetConvId]).getTime();
+        // If message was sent at or before the chat was cleared, it is hidden from current user!
+        if (msgTime > 0 && clearTime > 0 && msgTime <= clearTime) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     let pendingMessageTarget = null;
     let pendingChatTarget = null;
 
@@ -1695,7 +1786,7 @@
       const convId = activeThreadId;
 
       if (scope === 'everyone') {
-        // 1. Delete from Supabase for everyone
+        // 1. Delete from Supabase for everyone (Both sides)
         if (dbClient) {
           try {
             await dbClient.from('messages').delete().eq('id', msgId);
@@ -1703,6 +1794,9 @@
             console.warn("Delete for everyone note:", e);
           }
         }
+      } else {
+        // "Delete for me" — ONLY for current user! Keeps message intact for the other person!
+        recordMessageDeletedForMe(msgId);
       }
 
       // 2. Remove locally
@@ -1753,14 +1847,11 @@
       const convId = pendingChatTarget.id;
       const name = pendingChatTarget.name;
 
-      // 1. Wipe in Supabase
-      if (dbClient) {
-        try {
-          await dbClient.from('messages').delete().eq('conversation_id', convId);
-        } catch (e) {}
-      }
+      // DO NOT delete from Supabase! WhatsApp standard: "Clear chat" only clears messages for YOU!
+      // The other person keeps their full chat history intact!
+      recordChatCleared(convId);
 
-      // 2. Clear locally
+      // 2. Clear locally for current user
       threadMessages[convId] = [];
       localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
 
@@ -1778,7 +1869,7 @@
 
       renderConversationsList();
       closeDeleteChatModal();
-      showAlert(`All messages with ${name} cleared.`, "info");
+      showAlert(`Chat messages with ${name} cleared on your device.`, "info");
     }
 
     async function executeDeleteEntireConversation() {
@@ -1786,13 +1877,9 @@
       const convId = pendingChatTarget.id;
       const name = pendingChatTarget.name;
 
-      // 1. Wipe in Supabase
-      if (dbClient) {
-        try {
-          await dbClient.from('messages').delete().eq('conversation_id', convId);
-          await dbClient.from('conversations').delete().eq('id', convId);
-        } catch (e) {}
-      }
+      // DO NOT delete rows from Supabase messages or conversations!
+      // This is ONLY a local deletion for current user. Peer's chat remains intact!
+      recordChatCleared(convId);
 
       // 2. Remove from customThreads & threadMessages
       customThreads = customThreads.filter(t => t.id !== convId);
@@ -1800,17 +1887,29 @@
       localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
       localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
 
-      // 3. Switch to AI companion
+      // 3. Clear DOM messagesContainer before switching
+      const container = document.getElementById('messagesContainer');
+      if (container) {
+        container.innerHTML = `
+          <div class="flex justify-center my-2">
+            <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
+              🔒 Private Encrypted Channel
+            </span>
+          </div>
+        `;
+      }
+
+      // 4. Switch to AI companion
       selectThread('ai-companion');
       renderConversationsList();
       closeDeleteChatModal();
-      showAlert(`Chat with ${name} deleted completely.`, "info");
+      showAlert(`Chat with ${name} removed from your device.`, "info");
     }
 
     function clearAiChatHistory() {
       if (!confirm("Clear all messages with Resence AI Companion?")) return;
       threadMessages['ai-companion'] = [
-        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Encrypted", time: "Just now" }
+        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Resence AI Core", time: "Just now" }
       ];
       localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
       if (activeThreadId === 'ai-companion') {
@@ -2322,7 +2421,7 @@
     // ========================================================
     let threadMessages = {
       'ai-companion': [
-        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Encrypted", time: "Just now" }
+        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Resence AI Core", time: "Just now" }
       ]
     };
 
@@ -2332,7 +2431,18 @@
         const parsed = JSON.parse(savedMessages);
         delete parsed['comm-glbim'];
         delete parsed['peer-founder'];
+        // STRICT SANITIZATION: Clean any leaked incoming peer messages from ai-companion
+        if (parsed['ai-companion']) {
+          parsed['ai-companion'] = parsed['ai-companion'].filter(m => m.type === 'ai' || (m.type === 'outgoing' && !m.conversation_id));
+        }
         threadMessages = { ...threadMessages, ...parsed };
+      }
+      // Guarantee ai-companion has clean initial greeting and ZERO peer messages
+      if (!threadMessages['ai-companion'] || !threadMessages['ai-companion'].length || threadMessages['ai-companion'].some(m => m.type === 'incoming')) {
+        threadMessages['ai-companion'] = [
+          { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Resence AI Core", time: "Just now" }
+        ];
+        localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
       }
     } catch (e) {}
 
@@ -2346,10 +2456,13 @@
         </div>
       `;
 
-      // 1. Render local cached messages for this thread (cleanse rogue AI bubbles in peer chats)
+      // 1. Render local cached messages for this thread (cleanse rogue AI bubbles in peer chats & rogue peer bubbles in AI chat)
       let msgs = threadMessages[threadId] || [];
-      if (threadId !== 'ai-companion') {
-        msgs = msgs.filter(m => m.type !== 'ai');
+      if (threadId === 'ai-companion') {
+        msgs = msgs.filter(m => m.type === 'ai' || (m.type === 'outgoing' && !m.conversation_id));
+        threadMessages['ai-companion'] = msgs;
+      } else {
+        msgs = msgs.filter(m => m.type !== 'ai' && isMessageVisibleToMe(m, threadId));
         threadMessages[threadId] = msgs;
       }
       msgs.forEach(msg => {
@@ -2366,6 +2479,9 @@
             .order('created_at', { ascending: true })
             .limit(100);
 
+          // RACE CONDITION GUARD: If user switched threads while fetch was in flight, abort!
+          if (activeThreadId !== threadId) return;
+
           if (data && data.length > 0) {
             const myId = currentUserProfile.id;
             const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
@@ -2381,6 +2497,7 @@
 
             const cleanMsgs = [];
             data.forEach(dbMsg => {
+              if (!isMessageVisibleToMe(dbMsg, threadId)) return;
               const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
               const converted = {
                 id: dbMsg.id,
@@ -2391,7 +2508,8 @@
                 file_name: dbMsg.media_caption,
                 transport: dbMsg.transport_mode || 'Encrypted Internet',
                 time: formatTime(dbMsg.created_at),
-                created_at: dbMsg.created_at
+                created_at: dbMsg.created_at,
+                conversation_id: threadId
               };
               cleanMsgs.push(converted);
               renderSingleMessageBubble(converted);
@@ -2806,6 +2924,12 @@
           if (!isForMe) return;
 
           const convId = newMsg.conversation_id;
+          // STRICT GUARD: Peer messages must NEVER enter ai-companion!
+          if (!convId || convId === 'ai-companion') return;
+
+          // Check if message was deleted for me or chat cleared
+          if (!isMessageVisibleToMe(newMsg, convId)) return;
+
           const converted = {
             id: newMsg.id,
             type: 'incoming',
@@ -2815,7 +2939,8 @@
             file_name: newMsg.media_caption,
             transport: newMsg.transport_mode || 'Encrypted Internet',
             time: formatTime(newMsg.created_at),
-            created_at: newMsg.created_at
+            created_at: newMsg.created_at,
+            conversation_id: convId
           };
 
           if (!threadMessages[convId]) threadMessages[convId] = [];
@@ -2824,7 +2949,7 @@
             localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
           }
 
-          if (activeThreadId === convId) {
+          if (activeThreadId === convId && activeThreadId !== 'ai-companion') {
             renderSingleMessageBubble(converted);
           } else {
             showAlert(`New message from ${newMsg.sender_id}`, 'info');
@@ -2834,6 +2959,30 @@
           if (!customThreads.some(t => t.id === convId)) {
             await syncConversationsFromSupabase();
           } else {
+            renderConversationsList();
+          }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+          // Realtime "Delete for everyone" handler
+          const oldMsg = payload.old;
+          if (!oldMsg || !oldMsg.id) return;
+          const msgId = oldMsg.id;
+
+          // 1. Remove DOM bubble if currently open
+          const bubbleEl = document.getElementById(`bubble-${msgId}`);
+          if (bubbleEl) bubbleEl.remove();
+
+          // 2. Remove from local threadMessages across threads
+          let updated = false;
+          Object.keys(threadMessages).forEach(tid => {
+            if (threadMessages[tid]) {
+              const beforeCount = threadMessages[tid].length;
+              threadMessages[tid] = threadMessages[tid].filter(m => String(m.id) !== String(msgId));
+              if (threadMessages[tid].length !== beforeCount) updated = true;
+            }
+          });
+          if (updated) {
+            localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
             renderConversationsList();
           }
         })
@@ -2869,7 +3018,10 @@
 
         if (messages && messages.length > 0) {
           messages.forEach(m => {
-            if (m.conversation_id) {
+            if (m.conversation_id && m.conversation_id !== 'ai-companion') {
+              // Skip if deleted for me or chat cleared
+              if (!isMessageVisibleToMe(m, m.conversation_id)) return;
+
               if (!convMap.has(m.conversation_id) || !convMap.get(m.conversation_id)) {
                 convMap.set(m.conversation_id, m);
               }
@@ -2887,7 +3039,8 @@
                   file_name: m.media_caption,
                   transport: 'Encrypted Internet',
                   time: formatTime(m.created_at),
-                  created_at: m.created_at
+                  created_at: m.created_at,
+                  conversation_id: m.conversation_id
                 });
               }
             }
@@ -2956,22 +3109,29 @@
     }
 
     async function pollActiveThreadMessages() {
-      if (!dbClient || !currentUserProfile || activeThreadId === 'ai-companion') return;
+      const pollingThreadId = activeThreadId;
+      if (!dbClient || !currentUserProfile || !pollingThreadId || pollingThreadId === 'ai-companion') return;
       try {
         const { data } = await dbClient
           .from('messages')
           .select('*')
-          .eq('conversation_id', activeThreadId)
+          .eq('conversation_id', pollingThreadId)
           .order('created_at', { ascending: true })
           .limit(50);
+
+        // RACE CONDITION GUARD: If user switched threads while fetch was in flight, ABORT immediately!
+        if (activeThreadId !== pollingThreadId || activeThreadId === 'ai-companion') return;
 
         if (data && data.length > 0) {
           const myId = currentUserProfile.id;
           const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
-          let msgs = threadMessages[activeThreadId] || [];
+          let msgs = threadMessages[pollingThreadId] || [];
           let hasNew = false;
 
           data.forEach(dbMsg => {
+            // Check if deleted for me or chat cleared
+            if (!isMessageVisibleToMe(dbMsg, pollingThreadId)) return;
+
             const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
 
             // CRITICAL: Sender already rendered their own outgoing message! NEVER re-render from poll!
@@ -2996,16 +3156,19 @@
                 file_name: dbMsg.media_caption,
                 transport: dbMsg.transport_mode || 'Encrypted Internet',
                 time: formatTime(dbMsg.created_at),
-                created_at: dbMsg.created_at
+                created_at: dbMsg.created_at,
+                conversation_id: pollingThreadId
               };
               msgs.push(converted);
-              renderSingleMessageBubble(converted);
+              if (activeThreadId === pollingThreadId) {
+                renderSingleMessageBubble(converted);
+              }
               hasNew = true;
             }
           });
 
-          if (hasNew) {
-            threadMessages[activeThreadId] = msgs;
+          if (hasNew && activeThreadId === pollingThreadId) {
+            threadMessages[pollingThreadId] = msgs;
             localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
           }
         }
@@ -3396,12 +3559,28 @@
               customThreads = threads;
               localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
             }
+            loadUserDeletionState();
             let savedMsgs = localStorage.getItem('weresence_thread_messages');
             if (savedMsgs) {
               let msgs = JSON.parse(savedMsgs);
               delete msgs['comm-glbim'];
               delete msgs['peer-founder'];
-              threadMessages = { 'ai-companion': threadMessages['ai-companion'] || [], ...msgs };
+              // PURGE all contaminated incoming peer messages from ai-companion
+              if (msgs['ai-companion']) {
+                msgs['ai-companion'] = msgs['ai-companion'].filter(m => m.type === 'ai' || (m.type === 'outgoing' && !m.conversation_id));
+              }
+              threadMessages = {
+                'ai-companion': [
+                  { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Resence AI Core", time: "Just now" }
+                ],
+                ...msgs
+              };
+              // Double check ai-companion cleanliness
+              if (!threadMessages['ai-companion'] || !threadMessages['ai-companion'].length || threadMessages['ai-companion'].some(m => m.type === 'incoming')) {
+                threadMessages['ai-companion'] = [
+                  { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Resence AI Core", time: "Just now" }
+                ];
+              }
               localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
             }
           } catch (e) {}
