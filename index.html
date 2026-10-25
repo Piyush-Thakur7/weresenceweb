@@ -171,27 +171,29 @@
 
         <!-- CHAT MESSAGE FEED -->
         <div id="mockChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+          <!-- INITIAL ENCRYPTION PILL (WHATSAPP STYLE) -->
+          <div class="flex justify-center my-1">
+            <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-medium border border-slate-200/60 dark:border-slate-700/60">
+              🔒 End-to-end encrypted • Anti-screenshot enabled
+            </span>
+          </div>
+
           <!-- INITIAL MESSAGES -->
           <div class="flex items-start gap-2">
             <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0">
               AI
             </div>
             <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-              Hey! I'm Resence AI. Ask me anything, or tap the button above to test what happens when your internet turns off.
+              Hey! I'm Resence AI. Ask me anything, or tap "Online" above to test what happens when your data turns off.
             </div>
           </div>
         </div>
 
         <!-- INPUT BAR -->
         <div class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
-          <!-- MEDIA LOCK NOTICE (SHOWN ONLY WHEN OFFLINE) -->
-          <div id="offlineNotice" class="hidden mb-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400 font-medium text-center">
-            Offline Mode active • Text messages send automatically. Media & AI pause until connected.
-          </div>
-
           <form onsubmit="sendMockMessage(event)" class="flex items-center gap-2">
             <!-- ATTACH MEDIA BUTTON -->
-            <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio are supported when online).')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors">
+            <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio are supported when online).')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all">
               📎
             </button>
 
@@ -359,13 +361,20 @@
 
     // Live Mock Preview State
     let isOnline = true;
+    let smsUsed = 84;
+    const maxSms = 100;
+
     function toggleMockNetwork() {
       isOnline = !isOnline;
       const netBtn = document.getElementById('mockNetBtn');
       const avatar = document.getElementById('mockAvatar');
       const chatStatus = document.getElementById('mockChatStatus');
-      const offlineNotice = document.getElementById('offlineNotice');
       const mediaBtn = document.getElementById('mockMediaBtn');
+      const mockInput = document.getElementById('mockInput');
+      const feed = document.getElementById('mockChatFeed');
+
+      const pill = document.createElement('div');
+      pill.className = "flex justify-center my-2";
 
       if (isOnline) {
         netBtn.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30";
@@ -373,19 +382,35 @@
         avatar.className = "w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm";
         chatStatus.textContent = "Ready to assist";
         chatStatus.className = "text-[10px] text-emerald-500 mt-0.5";
-        offlineNotice.classList.add('hidden');
         mediaBtn.style.opacity = "1";
         mediaBtn.disabled = false;
+        mockInput.placeholder = "Write a message...";
+
+        // WhatsApp style inline notification pill
+        pill.innerHTML = `
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium border border-emerald-500/20 shadow-xs">
+            🌐 Reconnected to Internet • Unlimited Mode active
+          </span>
+        `;
       } else {
         netBtn.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30";
         netBtn.textContent = "🟡 Offline";
         avatar.className = "w-8 h-8 rounded-full bg-slate-400 dark:bg-slate-600 flex items-center justify-center text-white text-xs font-bold shadow-sm";
-        chatStatus.textContent = "Paused (Waiting for connection)";
+        chatStatus.textContent = "Paused (No Internet)";
         chatStatus.className = "text-[10px] text-slate-400 mt-0.5";
-        offlineNotice.classList.remove('hidden');
-        mediaBtn.style.opacity = "0.4";
+        mediaBtn.style.opacity = "0.3";
         mediaBtn.disabled = true;
+        mockInput.placeholder = `Type offline SMS (${smsUsed}/${maxSms})...`;
+
+        // WhatsApp style inline notification pill
+        pill.innerHTML = `
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium border border-slate-200 dark:border-slate-700/80 shadow-xs">
+            📡 Switched to Offline SMS • ${smsUsed}/${maxSms} today
+          </span>
+        `;
       }
+      feed.appendChild(pill);
+      feed.scrollTop = feed.scrollHeight;
     }
 
     function sendMockMessage(e) {
@@ -396,11 +421,16 @@
 
       const feed = document.getElementById('mockChatFeed');
       
+      if (!isOnline) {
+        smsUsed++;
+        input.placeholder = `Type offline SMS (${smsUsed}/${maxSms})...`;
+      }
+
       // User bubble
       const userBubble = document.createElement('div');
       userBubble.className = "flex justify-end";
       userBubble.innerHTML = `
-        <div class="max-w-[78%] p-3 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium">
+        <div class="max-w-[78%] p-3 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-sm">
           ${text}
           <div class="text-[9px] opacity-75 text-right mt-1">${isOnline ? 'Delivered ✓✓' : 'Sent via Offline SMS ✓'}</div>
         </div>
@@ -408,6 +438,20 @@
       feed.appendChild(userBubble);
       input.value = '';
       feed.scrollTop = feed.scrollHeight;
+
+      // Notice if limit reached
+      if (!isOnline && smsUsed >= maxSms) {
+        const limitPill = document.createElement('div');
+        limitPill.className = "flex justify-center my-2";
+        limitPill.innerHTML = `
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium border border-amber-500/20">
+            ☁️ Daily 100 SMS reached • Remaining messages saved in cloud
+          </span>
+        `;
+        feed.appendChild(limitPill);
+        feed.scrollTop = feed.scrollHeight;
+        return;
+      }
 
       // Resence AI reply if online
       if (isOnline) {
@@ -418,13 +462,13 @@
             <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0">
               AI
             </div>
-            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-              Got it! In online mode, all rich media and AI responses work seamlessly. Try switching to "Offline" to see the auto-fallback!
+            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm">
+              Got it! In online mode, rich media and AI responses work seamlessly. Notice how smooth the inline pills appear when you tap "Online".
             </div>
           `;
           feed.appendChild(aiBubble);
           feed.scrollTop = feed.scrollHeight;
-        }, 600);
+        }, 500);
       }
     }
 
