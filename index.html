@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>WeResence — Private & Secure Messenger</title>
   
   <!-- PWA & Mobile Meta Tags -->
@@ -886,10 +889,28 @@
     let isSimulatingOffline = false;
     let deferredPwaPrompt = null;
 
-    // 4. PWA REGISTRATION
+    // 4. PWA REGISTRATION (INSTANT AUTO-UPDATE & CACHE-BUST)
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.update();
+        }
+      });
+
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration error:', err));
+        navigator.serviceWorker.register('/sw.js?v=' + Date.now()).then(registration => {
+          registration.onupdatefound = () => {
+            const installingWorker = registration.installing;
+            if (installingWorker) {
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version detected: reload immediately to show fresh UI
+                  window.location.reload();
+                }
+              };
+            }
+          };
+        }).catch(err => console.log('SW registration error:', err));
       });
     }
 
