@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WeResence — Simple, Private Messaging & AI</title>
+  <title>WeResence — Sovereign Hybrid Messenger & Private AI</title>
+  <meta name="description" content="The dual-engine hybrid messenger that automatically switches to stealth cellular SMS when internet drops. Military-grade E2EE, mutual private vaults, and zero cloud retention.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -11,7 +15,20 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Inter"', 'Roboto', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: {
+              950: '#060709',
+              900: '#0A0C10',
+              850: '#0F1218',
+              800: '#141820',
+            },
+            accent: {
+              emerald: '#10B981',
+              emeraldGlow: '#059669',
+            }
           }
         }
       }
@@ -19,213 +36,245 @@
   </script>
   <style>
     * {
-      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+      transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, color 0.2s ease;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .wordmark {
-      letter-spacing: -0.04em;
+      letter-spacing: -0.05em;
+    }
+    .ambient-glow {
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 65%);
+    }
+    .ambient-glow-light {
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0) 70%);
+    }
+    .glass-card {
+      background: rgba(15, 18, 24, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .light .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .subtle-grid {
+      background-size: 32px 32px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+    .light .subtle-grid {
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     }
   </style>
 </head>
-<body class="bg-[#FAFAFB] dark:bg-[#090A0F] text-slate-900 dark:text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-black">
+<body class="bg-obsidian-950 dark:bg-obsidian-950 text-slate-100 dark:text-slate-100 light:bg-[#FBFBFD] light:text-slate-900 min-h-screen selection:bg-emerald-500 selection:text-black subtle-grid relative overflow-x-hidden">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="sticky top-0 z-50 w-full bg-white/80 dark:bg-[#090A0F]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80">
-    <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+  <!-- TOP AMBIENT SPOTLIGHT -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[550px] ambient-glow dark:ambient-glow light:ambient-glow-light pointer-events-none z-0"></div>
+
+  <!-- NAVIGATION BAR -->
+  <header class="sticky top-0 z-50 w-full bg-obsidian-950/80 dark:bg-obsidian-950/80 light:bg-white/80 backdrop-blur-xl border-b border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08]">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       
       <!-- MINIMALIST WORDMARK LOGO -->
-      <a href="#" class="wordmark text-2xl font-black tracking-tight text-slate-950 dark:text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+      <a href="#" class="wordmark text-2xl font-black tracking-tight text-white dark:text-white light:text-slate-950 flex items-center gap-1.5 hover:opacity-90">
         <span>WeResence</span>
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
       </a>
 
-      <!-- RIGHT CONTROLS: THEME TOGGLE & DOWNLOAD -->
-      <div class="flex items-center gap-4">
-        <a href="#how-to-install" class="hidden sm:inline-block text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-          How to Install
+      <!-- NAV LINKS & ACTIONS -->
+      <div class="flex items-center gap-6">
+        <a href="#architecture" class="hidden md:inline-block text-xs font-semibold text-slate-400 hover:text-white dark:text-slate-400 dark:hover:text-white light:text-slate-600 light:hover:text-black transition-colors">
+          Security Model
         </a>
-        <a href="#features" class="hidden sm:inline-block text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-          Features
+        <a href="#features" class="hidden md:inline-block text-xs font-semibold text-slate-400 hover:text-white dark:text-slate-400 dark:hover:text-white light:text-slate-600 light:hover:text-black transition-colors">
+          Capabilities
+        </a>
+        <a href="#install" class="hidden sm:inline-block text-xs font-semibold text-slate-400 hover:text-white dark:text-slate-400 dark:hover:text-white light:text-slate-600 light:hover:text-black transition-colors">
+          Installation
         </a>
 
-        <!-- THEME SWITCHER -->
-        <button onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme" class="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:scale-105 active:scale-95 transition-all">
-          <span id="themeIcon" class="text-sm">☀️</span>
+        <!-- THEME TOGGLE -->
+        <button onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme" class="w-8 h-8 rounded-full border border-white/10 dark:border-white/10 light:border-black/10 bg-white/5 dark:bg-white/5 light:bg-black/5 flex items-center justify-center text-slate-300 dark:text-slate-300 light:text-slate-700 hover:scale-105 transition-all text-xs">
+          <span id="themeIcon">☀️</span>
         </button>
 
-        <!-- DOWNLOAD BUTTON -->
-        <a href="#download" class="px-4 py-2 rounded-full text-xs font-bold bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:opacity-90 transition-opacity shadow-sm">
-          Get App
+        <!-- DOWNLOAD APK CTA -->
+        <a href="https://github.com/Piyush-Thakur7/weresence/releases/download/v1.0/WeResence-v1.0.apk" class="px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-950 dark:bg-white dark:text-slate-950 light:bg-slate-950 light:text-white hover:bg-slate-200 transition-all shadow-sm">
+          Get APK (v1.0)
         </a>
       </div>
     </div>
   </header>
 
   <!-- HERO SECTION -->
-  <main class="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
+  <section class="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center relative z-10">
     
-    <!-- SUBTLE STATUS PILL -->
-    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 mb-8">
-      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span>Official Release • Version 1.0</span>
+    <!-- SYSTEM RELEASE STATUS BADGE -->
+    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 mb-8">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span>v1.0 • Sovereign Dual-Transport Engine</span>
     </div>
 
-    <!-- CLEAN, JARGON-FREE HEADLINE -->
-    <h1 class="wordmark text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] mb-6 text-slate-950 dark:text-white">
-      Chat without limits.<br>
-      <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500">
-        Even when internet drops.
+    <!-- MAIN EDITORIAL HEADLINE -->
+    <h1 class="wordmark text-4xl sm:text-6xl md:text-7xl font-extrabold text-white dark:text-white light:text-slate-950 tracking-tight leading-[1.06] mb-6 max-w-4xl mx-auto">
+      Chat without internet.<br>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-400">
+        Completely impenetrable.
       </span>
     </h1>
 
-    <!-- PLAIN ENGLISH SUBTITLE -->
-    <p class="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto mb-10 leading-relaxed font-normal">
-      A fast, clean messenger designed for everyday privacy. Send photos and videos online, chat seamlessly offline, and talk with Resence AI anytime.
+    <p class="text-base sm:text-lg text-slate-400 dark:text-slate-400 light:text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+      The sovereign messenger that automatically routes 1-on-1 chats via stealth cellular SMS when data drops. Built-in Resence AI, hardware anti-screenshot defense, and mutual private vaults.
     </p>
 
     <!-- ACTION BUTTONS -->
-    <div id="download" class="flex flex-wrap items-center justify-center gap-3.5 mb-14">
-      <a href="https://github.com/Piyush-Thakur7/weresence/releases/download/v1.0/WeResence-v1.0.apk" class="px-8 py-3.5 rounded-full text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+    <div class="flex flex-wrap items-center justify-center gap-3.5 mb-16">
+      <a href="https://github.com/Piyush-Thakur7/weresence/releases/download/v1.0/WeResence-v1.0.apk" class="px-7 py-3.5 rounded-full text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         <span>Download WeResence APK</span>
       </a>
 
-      <a href="#preview" class="px-6 py-3.5 rounded-full text-sm font-semibold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all flex items-center gap-2">
-        <span>Try Live Preview</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      <a href="https://github.com/Piyush-Thakur7/weresence" target="_blank" class="px-6 py-3.5 rounded-full text-sm font-semibold glass-card text-slate-200 dark:text-slate-200 light:text-slate-800 hover:bg-white/10 transition-all flex items-center gap-2">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>Source Architecture</span>
       </a>
     </div>
 
-    <!-- 4 SIMPLE KEY PROMISES (NO TECH JARGON) -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-left">
-      <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Connection</p>
-        <p class="text-sm font-bold text-slate-900 dark:text-white mt-1">Works Offline</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Messages still send when data turns off.</p>
+    <!-- 4 CORE VALUE METRICS (JARGON-FREE) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto text-left">
+      <div class="p-4 rounded-2xl glass-card">
+        <p class="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Transport</p>
+        <p class="text-sm font-bold text-white dark:text-white light:text-slate-900 mt-1">Zero-Drop Auto Shift</p>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-1">Continues over cellular SMS when data fails.</p>
       </div>
 
-      <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privacy</p>
-        <p class="text-sm font-bold text-slate-900 dark:text-white mt-1">Anti-Screenshot</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Screenshots & recordings blocked.</p>
+      <div class="p-4 rounded-2xl glass-card">
+        <p class="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Privacy</p>
+        <p class="text-sm font-bold text-white dark:text-white light:text-slate-900 mt-1">Zero Call Logs</p>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-1">Calls bypass Google/Samsung phone logs.</p>
       </div>
 
-      <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Assistant</p>
-        <p class="text-sm font-bold text-slate-900 dark:text-white mt-1">Resence AI</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Built-in smart helper for ideas & answers.</p>
+      <div class="p-4 rounded-2xl glass-card">
+        <p class="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mutual Vault</p>
+        <p class="text-sm font-bold text-white dark:text-white light:text-slate-900 mt-1">Dual Passwords</p>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-1">Only the original uploader can delete.</p>
       </div>
 
-      <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Control</p>
-        <p class="text-sm font-bold text-slate-900 dark:text-white mt-1">Secret Vault</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Second PIN to hide private chats.</p>
+      <div class="p-4 rounded-2xl glass-card">
+        <p class="text-[11px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider">Companion</p>
+        <p class="text-sm font-bold text-white dark:text-white light:text-slate-900 mt-1">Resence AI</p>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-1">On tap online; automatically rests offline.</p>
       </div>
     </div>
-  </main>
+  </section>
 
-  <!-- LIVE INTERACTIVE APP PREVIEW (CLEAN & MINIMAL) -->
-  <section id="preview" class="max-w-md mx-auto px-5 py-12">
+  <!-- INTERACTIVE PHONE HARDWARE SHOWCASE -->
+  <section class="max-w-md mx-auto px-5 py-8 relative z-10">
     <div class="text-center mb-6">
-      <h2 class="wordmark text-xl sm:text-2xl font-black text-slate-950 dark:text-white">
-        Experience the Clean UI
+      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Interactive Live Mockup</span>
+      <h2 class="wordmark text-2xl font-extrabold text-white dark:text-white light:text-slate-950 mt-1">
+        Engineered for Pure Fluidity
       </h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-        Try sending messages, toggling internet, and testing Resence AI below.
+      <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 mt-1">
+        Tap the controls below to experience automatic offline switching and mutual vaults.
       </p>
     </div>
 
-    <!-- PHONE CONTAINER -->
-    <div class="rounded-[36px] p-3.5 bg-slate-900 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 shadow-2xl">
-      <div class="rounded-[28px] overflow-hidden bg-white dark:bg-[#0D1017] border border-slate-200 dark:border-slate-800/80 flex flex-col h-[560px]">
+    <!-- PHONE HARDWARE CHASSIS (TITANIUM EDGE) -->
+    <div class="rounded-[44px] p-3 bg-gradient-to-b from-slate-800 via-slate-900 to-obsidian-950 border border-white/20 dark:border-white/15 light:border-black/20 shadow-2xl relative">
+      <div class="rounded-[36px] overflow-hidden bg-obsidian-900 dark:bg-obsidian-900 light:bg-white border border-white/10 dark:border-white/10 light:border-black/10 flex flex-col h-[580px] relative">
         
-        <!-- PHONE STATUS BAR -->
-        <div class="px-5 pt-3 pb-2 flex items-center justify-between text-[11px] font-semibold text-slate-400">
+        <!-- HARDWARE TOP BAR & DYNAMIC STATUS -->
+        <div class="px-5 pt-3.5 pb-2 flex items-center justify-between text-[11px] font-semibold text-slate-400">
           <span>9:41</span>
           <div class="flex items-center gap-2">
-            <!-- INTERNET TOGGLE PILL (SIMULATOR) -->
-            <button onclick="toggleMockNetwork()" id="mockNetBtn" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" title="Tap to test automatic network drop">
-              🟢 Online (Test Auto-Shift)
+            <!-- AUTO NETWORK SIMULATOR PILL -->
+            <button onclick="toggleMockNetwork()" id="mockNetBtn" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:scale-105 active:scale-95 transition-transform" title="Simulate dropping mobile data/Wi-Fi">
+              🟢 ONLINE (Tap to Test Drop)
             </button>
             <span>5G</span>
           </div>
         </div>
 
-        <!-- APP HEADER -->
-        <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-          <div onclick="openContactProfile()" class="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity" title="Tap to view Profile & Mutual Vault">
-            <div id="mockAvatar" class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+        <!-- APP HEADER (CLICKABLE FOR PROFILE & MUTUAL VAULT) -->
+        <div class="px-4 py-2.5 border-b border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] flex items-center justify-between">
+          <div onclick="openContactProfile()" class="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity" title="Tap to view Profile & Mutual Vault">
+            <div id="mockAvatar" class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-sm">
               AI
             </div>
             <div>
-              <p id="mockChatTitle" class="text-xs font-bold text-slate-900 dark:text-white leading-none">Resence AI</p>
-              <p id="mockChatStatus" class="text-[10px] text-emerald-500 mt-0.5">Ready to assist</p>
+              <p id="mockChatTitle" class="text-xs font-bold text-white dark:text-white light:text-slate-950 leading-none">Resence AI</p>
+              <p id="mockChatStatus" class="text-[10px] text-emerald-400 mt-0.5 font-medium">Ready to assist</p>
             </div>
           </div>
 
-          <!-- HEADER RIGHT CONTROLS: NEW CHAT / CONTACTS & VAULT -->
+          <!-- HEADER CONTROLS: NEW CHAT & GHOST VAULT PIN -->
           <div class="flex items-center gap-1.5">
-            <button onclick="openContactsModal()" class="w-7 h-7 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-xs transition-colors" title="Start New Chat">
+            <button onclick="openContactsModal()" class="w-7 h-7 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs transition-colors" title="Start New Conversation">
               ＋
             </button>
-            <button onclick="promptGhostPin()" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80">
+            <button onclick="promptGhostPin()" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 dark:bg-white/10 light:bg-black/5 text-slate-200 dark:text-slate-200 light:text-slate-800 hover:bg-white/20 transition-colors">
               🔒 Vault
             </button>
           </div>
         </div>
 
-        <!-- CHAT MESSAGE FEED -->
+        <!-- 1-ON-1 CHAT FEED -->
         <div id="mockChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <!-- INITIAL ENCRYPTION PILL (WHATSAPP STYLE) -->
+          <!-- INITIAL SUBTLE ENCRYPTION PILL -->
           <div class="flex justify-center my-1">
-            <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-medium border border-slate-200/60 dark:border-slate-700/60">
-              🔒 1-on-1 Chats: Offline SMS fallback enabled
+            <span class="px-3 py-0.5 rounded-full text-[10px] font-medium bg-white/5 dark:bg-white/5 light:bg-black/5 text-slate-400 border border-white/10 dark:border-white/10 light:border-black/10">
+              🔒 Zero-Knowledge E2EE • Anti-Screenshot Active
             </span>
           </div>
 
-          <!-- INITIAL MESSAGES -->
+          <!-- BOT MESSAGE -->
           <div class="flex items-start gap-2">
-            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0">
+            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0 font-bold">
               AI
             </div>
-            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-              Hey! I'm Resence AI. 1-on-1 chats use offline SMS fallback when data drops. Groups & Communities run online-only!
+            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 dark:bg-white/5 light:bg-slate-100 text-slate-200 dark:text-slate-200 light:text-slate-800 border border-white/5">
+              Hey! I'm Resence AI. Ask me anything, or tap the network button above to test how WeResence continues over offline cellular SMS when your internet disconnects.
             </div>
           </div>
         </div>
 
         <!-- COMMUNITIES FEED (HIDDEN INITIALLY) -->
         <div id="mockCommunityFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+          <div class="p-3.5 rounded-2xl glass-card">
             <div class="flex items-center gap-2.5 mb-2.5">
-              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center">
                 G
               </div>
               <div>
-                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-none">GLBIM Greater Noida</h4>
-                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Official Campus Community • 100% Online</p>
+                <h4 class="text-xs font-bold text-white dark:text-white light:text-slate-900 leading-none">GLBIM Greater Noida</h4>
+                <p class="text-[10px] text-slate-400 mt-0.5">Campus Community • 100% Online</p>
               </div>
             </div>
 
-            <!-- SUB-GROUPS LIST -->
+            <!-- SUB-GROUPS -->
             <div class="space-y-1.5 pl-2 border-l-2 border-emerald-500/30">
-              <div class="p-2 rounded-xl bg-white dark:bg-slate-800/60 flex items-center justify-between border border-slate-100 dark:border-slate-800">
+              <div class="p-2 rounded-xl bg-white/5 dark:bg-white/5 light:bg-slate-50 flex items-center justify-between border border-white/5">
                 <div class="flex items-center gap-2">
                   <span class="text-sm">📢</span>
                   <div>
-                    <p class="font-bold text-slate-900 dark:text-white text-[11px]">Announcements</p>
-                    <p class="text-[10px] text-slate-400">Exam schedules & notices</p>
+                    <p class="font-bold text-white dark:text-white light:text-slate-900 text-[11px]">Announcements</p>
+                    <p class="text-[10px] text-slate-400">Exam schedules & circulars</p>
                   </div>
                 </div>
-                <span class="text-[9px] font-semibold text-emerald-500">Admin only</span>
+                <span class="text-[9px] font-semibold text-emerald-400">Admin only</span>
               </div>
 
-              <div class="p-2 rounded-xl bg-white dark:bg-slate-800/60 flex items-center justify-between border border-slate-100 dark:border-slate-800">
+              <div class="p-2 rounded-xl bg-white/5 dark:bg-white/5 light:bg-slate-50 flex items-center justify-between border border-white/5">
                 <div class="flex items-center gap-2">
                   <span class="text-sm">💬</span>
                   <div>
-                    <p class="font-bold text-slate-900 dark:text-white text-[11px]">BCA AI/ML Sem 3</p>
-                    <p class="text-[10px] text-slate-400">Class study discussions</p>
+                    <p class="font-bold text-white dark:text-white light:text-slate-900 text-[11px]">BCA AI/ML Sem 3</p>
+                    <p class="text-[10px] text-slate-400">Class notes & practical code</p>
                   </div>
                 </div>
                 <span class="text-[9px] text-slate-400">42 members</span>
@@ -234,60 +283,60 @@
           </div>
         </div>
 
-        <!-- SETTINGS & PROFILE FEED (HIDDEN INITIALLY) -->
+        <!-- SETTINGS FEED (HIDDEN INITIALLY) -->
         <div id="mockSettingsFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <!-- PROFILE CARD -->
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-sm">
+          <!-- PROFILE HEADER -->
+          <div class="p-3.5 rounded-2xl glass-card flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-md">
               P
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="font-bold text-slate-900 dark:text-white text-xs truncate">Piyush Singh</h4>
-              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">+91 98765 43210</p>
+              <h4 class="font-bold text-white dark:text-white light:text-slate-900 text-xs truncate">Piyush Singh</h4>
+              <p class="text-[11px] text-emerald-400 font-semibold">+91 98765 43210</p>
               <p class="text-[10px] text-slate-400 truncate">ResenceID: @piyush</p>
             </div>
           </div>
 
           <!-- SETTINGS LIST -->
-          <div class="space-y-1 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 p-2">
-            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="editBio()">
+          <div class="space-y-1 rounded-2xl glass-card p-2">
+            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="editBio()">
               <div class="flex items-center gap-2.5">
                 <span>✏️</span>
                 <div>
-                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Edit Bio & Status</p>
+                  <p class="font-semibold text-white dark:text-white light:text-slate-900 text-[11px]">Edit Bio & Status</p>
                   <p id="bioText" class="text-[10px] text-slate-400">Available on WeResence</p>
                 </div>
               </div>
               <span class="text-slate-400 text-xs">›</span>
             </div>
 
-            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="toggleGoogleLink()">
+            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="toggleGoogleLink()">
               <div class="flex items-center gap-2.5">
                 <span>🔗</span>
                 <div>
-                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Linked Google Account</p>
-                  <p id="googleLinkStatus" class="text-[10px] text-slate-400">piyush@resence.in (Connected)</p>
+                  <p class="font-semibold text-white dark:text-white light:text-slate-900 text-[11px]">Linked Google Account</p>
+                  <p id="googleLinkStatus" class="text-[10px] text-slate-400">piyush@resence.in (Active)</p>
                 </div>
               </div>
-              <span class="text-emerald-500 text-[10px] font-bold">Active</span>
+              <span class="text-emerald-400 text-[10px] font-bold">Active</span>
             </div>
 
-            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="promptGhostPin()">
+            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="promptGhostPin()">
               <div class="flex items-center gap-2.5">
                 <span>🔒</span>
                 <div>
-                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Secret Vault (Ghost PIN)</p>
+                  <p class="font-semibold text-white dark:text-white light:text-slate-900 text-[11px]">Secret Vault (Ghost PIN)</p>
                   <p class="text-[10px] text-slate-400">Master: 1234 | Decoy: 0000</p>
                 </div>
               </div>
               <span class="text-slate-400 text-xs">›</span>
             </div>
 
-            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer">
+            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer">
               <div class="flex items-center gap-2.5">
                 <span>📶</span>
                 <div>
-                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Offline SMS SIM</p>
+                  <p class="font-semibold text-white dark:text-white light:text-slate-900 text-[11px]">Offline SMS SIM</p>
                   <p class="text-[10px] text-slate-400">SIM 1 (Jio) • 84/100 used today</p>
                 </div>
               </div>
@@ -296,22 +345,22 @@
           </div>
 
           <!-- LOGOUT BUTTON -->
-          <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+          <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-2 transition-all">
             <span>🚪</span>
             <span>Log Out of WeResence</span>
           </button>
         </div>
 
         <!-- INPUT BAR -->
-        <div id="mockInputBar" class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
+        <div id="mockInputBar" class="p-3 border-t border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] bg-obsidian-950 dark:bg-obsidian-950 light:bg-white">
           <form onsubmit="sendMockMessage(event)" class="flex items-center gap-2">
-            <!-- ATTACH MEDIA BUTTON -->
-            <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio are supported when online).')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all">
+            <!-- MEDIA BUTTON (LOCKED DYNAMICALLY WHEN OFFLINE) -->
+            <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio supported in online mode).')" class="w-8 h-8 rounded-full bg-white/5 dark:bg-white/5 light:bg-slate-100 text-slate-400 hover:text-white flex items-center justify-center transition-all">
               📎
             </button>
 
             <!-- INPUT FIELD -->
-            <input type="text" id="mockInput" placeholder="Write a message..." class="flex-1 bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-white text-xs px-3.5 py-2 rounded-full focus:outline-none focus:ring-1 focus:ring-emerald-500">
+            <input type="text" id="mockInput" placeholder="Write a message..." class="flex-1 bg-white/5 dark:bg-white/5 light:bg-slate-100 text-white dark:text-white light:text-slate-900 text-xs px-3.5 py-2 rounded-full focus:outline-none focus:ring-1 focus:ring-emerald-500">
 
             <!-- SEND BUTTON -->
             <button type="submit" class="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-sm">
@@ -320,219 +369,84 @@
           </form>
         </div>
 
-        <!-- WHATSAPP-STYLE 4-TAB BOTTOM NAVIGATION -->
-        <nav class="px-3 py-2 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/80 dark:bg-[#0A0D14] flex items-center justify-around text-center select-none">
-          <button onclick="switchTab('chats')" id="tabChats" class="flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all">
+        <!-- 4-TAB NAVIGATION BAR -->
+        <nav class="px-3 py-2 border-t border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] bg-obsidian-900 dark:bg-obsidian-900 light:bg-slate-50 flex items-center justify-around text-center select-none">
+          <button onclick="switchTab('chats')" id="tabChats" class="flex flex-col items-center text-emerald-400 font-bold transition-all">
             <span class="text-sm">💬</span>
             <span class="text-[9px] mt-0.5">Chats</span>
           </button>
-          <button onclick="switchTab('communities')" id="tabCommunities" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+          <button onclick="switchTab('communities')" id="tabCommunities" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
             <span class="text-sm">👥</span>
             <span class="text-[9px] mt-0.5">Communities</span>
           </button>
-          <button onclick="switchTab('ai')" id="tabAi" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+          <button onclick="switchTab('ai')" id="tabAi" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
             <span class="text-sm">🤖</span>
             <span class="text-[9px] mt-0.5">Resence AI</span>
           </button>
-          <button onclick="switchTab('settings')" id="tabSettings" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+          <button onclick="switchTab('settings')" id="tabSettings" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
             <span class="text-sm">⚙️</span>
             <span class="text-[9px] mt-0.5">Settings</span>
           </button>
         </nav>
 
-        
-        <!-- CONTACT PROFILE MODAL (TOP HEADER CLICK) -->
-        <div id="contactProfileModal" class="hidden absolute inset-0 bg-white dark:bg-[#0D1017] z-30 flex flex-col rounded-[28px] overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-            <h3 class="text-xs font-bold text-slate-900 dark:text-white">Contact Info</h3>
-            <button onclick="closeContactProfile()" class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs flex items-center justify-center font-bold hover:opacity-80">
-              ✕
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
-            <!-- PROFILE HERO -->
-            <div class="text-center py-2">
-              <div id="profileAvatarBig" class="w-16 h-16 rounded-full bg-emerald-500 text-slate-950 font-black text-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                R
-              </div>
-              <h4 id="profileNameBig" class="font-bold text-slate-900 dark:text-white text-sm">Rahul Sharma</h4>
-              <p id="profileHandleBig" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">@rahul</p>
-              <p id="profilePhoneBig" class="text-[11px] text-slate-400 mt-0.5">+91 98111 22233</p>
-              
-              <div class="mt-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-left">
-                <p class="text-[10px] text-slate-400 font-semibold uppercase">Bio</p>
-                <p id="profileBioBig" class="text-xs text-slate-800 dark:text-slate-200 mt-0.5">BCA AI/ML Sem 3 • Available on WeResence</p>
-              </div>
-            </div>
-
-            <!-- SECURITY BADGE -->
-            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
-              <span>🔒</span>
-              <div>
-                <p class="font-bold text-slate-900 dark:text-white text-[11px]">End-to-End Encrypted</p>
-                <p class="text-[10px] text-slate-400">Anti-screenshot & screen recording enabled</p>
-              </div>
-            </div>
-
-            <!-- MUTUAL PRIVATE GALLERY ENTRY (SECRET VAULT) -->
-            <div class="pt-2">
-              <button onclick="unlockMutualGallery()" class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 hover:from-emerald-500/20 hover:to-indigo-500/20 border border-emerald-500/30 text-left transition-all">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
-                      🔐
-                    </div>
-                    <div>
-                      <p class="font-bold text-slate-900 dark:text-white text-xs">Mutual Private Gallery</p>
-                      <p class="text-[10px] text-slate-500 dark:text-slate-400">Encrypted shared vault • Password protected</p>
-                    </div>
-                  </div>
-                  <span class="text-emerald-500 font-bold text-xs">Open ›</span>
-                </div>
-              </button>
-              <p class="text-[9px] text-slate-400 text-center mt-1.5">
-                Each person uses their own custom password. Only uploader can delete their media.
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- MUTUAL PRIVATE GALLERY VIEW -->
-        <div id="mutualGalleryModal" class="hidden absolute inset-0 bg-white dark:bg-[#0D1017] z-40 flex flex-col rounded-[28px] overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs">🔐</span>
-              <div>
-                <h3 class="text-xs font-bold text-slate-900 dark:text-white">Mutual Private Vault</h3>
-                <p class="text-[9px] text-emerald-500">Unlocked with your private password</p>
-              </div>
-            </div>
-            <button onclick="closeMutualGallery()" class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs flex items-center justify-center font-bold hover:opacity-80">
-              ✕
-            </button>
-          </div>
-
-          <!-- NOTICE PILL -->
-          <div class="p-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 text-center">
-            🔒 Anti-screenshot enforced • Peer cannot delete your uploads
-          </div>
-
-          <!-- GALLERY MEDIA GRID -->
-          <div id="mutualMediaFeed" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
-            
-            <!-- MEDIA 1: UPLOADED BY YOU -->
-            <div class="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
-              <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-bold text-xs mb-2">
-                📸 Project_Architecture_Diagram.png
-              </div>
-              <div class="flex items-center justify-between text-[10px]">
-                <div>
-                  <span class="font-bold text-slate-900 dark:text-white">Uploaded by You</span>
-                  <span class="text-slate-400 block text-[9px]">Today at 16:20 • 2.4 MB</span>
-                </div>
-                <!-- DELETE BUTTON (ALLOWED BECAUSE YOU UPLOADED IT) -->
-                <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold text-[9px] transition-colors">
-                  🗑️ Delete
-                </button>
-              </div>
-            </div>
-
-            <!-- MEDIA 2: UPLOADED BY RAHUL (VIEW ONLY - CANNOT DELETE) -->
-            <div class="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
-              <div class="aspect-video bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 font-bold text-xs mb-2">
-                🎥 DBMS_Practical_Walkthrough.mp4
-              </div>
-              <div class="flex items-center justify-between text-[10px]">
-                <div>
-                  <span class="font-bold text-slate-900 dark:text-white">Uploaded by Rahul</span>
-                  <span class="text-slate-400 block text-[9px]">Yesterday at 19:45 • 18 MB</span>
-                </div>
-                <!-- NO DELETE BUTTON (CANNOT DELETE PEER'S UPLOAD) -->
-                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-medium" title="Only Rahul can delete this media">
-                  👁️ View Only
-                </span>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- BOTTOM ACTION: ADD TO VAULT -->
-          <div class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
-            <button onclick="addMediaToVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs">
-              <span>➕</span>
-              <span>Add Photo or Video to Mutual Vault</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- CONTACTS & INVITE MODAL OVERLAY (WHATSAPP DISCOVERY) -->
-        <div id="contactsModal" class="hidden absolute inset-0 bg-white dark:bg-[#0D1017] z-30 flex flex-col rounded-[28px] overflow-hidden">
-          <!-- MODAL HEADER -->
-          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+        <!-- CONTACTS & INVITE MODAL OVERLAY -->
+        <div id="contactsModal" class="hidden absolute inset-0 bg-obsidian-950 dark:bg-obsidian-950 light:bg-white z-30 flex flex-col rounded-[36px] overflow-hidden">
+          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
             <div>
-              <h3 class="text-xs font-bold text-slate-900 dark:text-white">New Conversation</h3>
-              <p class="text-[10px] text-emerald-500 font-medium">2 contacts on WeResence</p>
+              <h3 class="text-xs font-bold text-white dark:text-white light:text-slate-900">New Conversation</h3>
+              <p class="text-[10px] text-emerald-400 font-medium">2 contacts on WeResence</p>
             </div>
-            <button onclick="closeContactsModal()" class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs flex items-center justify-center font-bold hover:opacity-80">
+            <button onclick="closeContactsModal()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
               ✕
             </button>
           </div>
 
-          <!-- SEARCH BAR -->
-          <div class="p-3 border-b border-slate-100 dark:border-slate-800/80">
-            <input type="text" placeholder="Search name or number..." class="w-full bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-white text-xs px-3 py-1.5 rounded-full focus:outline-none">
+          <div class="p-3 border-b border-white/[0.08]">
+            <input type="text" placeholder="Search name or number..." class="w-full bg-white/5 text-white text-xs px-3 py-1.5 rounded-full focus:outline-none">
           </div>
 
-          <!-- CONTACTS LIST -->
           <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
-            
-            <!-- SECTION 1: REGISTERED WITH RESENCE ID -->
             <div>
-              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Contacts on WeResence</p>
-              
+              <p class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2">Contacts on WeResence</p>
               <div class="space-y-1.5">
-                <div onclick="selectContact('Rahul Sharma', '@rahul', '+91 98111 22233')" class="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                <div onclick="selectContact('Rahul Sharma', '@rahul', '+91 98111 22233')" class="p-2 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer border border-transparent hover:border-white/10">
                   <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center">
                       R
                     </div>
                     <div>
-                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Rahul Sharma</p>
-                      <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">@rahul • Available</p>
+                      <p class="font-bold text-white text-[11px]">Rahul Sharma</p>
+                      <p class="text-[10px] text-emerald-400">@rahul • Available</p>
                     </div>
                   </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">Chat</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold">Chat</span>
                 </div>
 
-                <div onclick="selectContact('Aman Verma', '@aman', '+91 98222 33344')" class="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                <div onclick="selectContact('Aman Verma', '@aman', '+91 98222 33344')" class="p-2 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer border border-transparent hover:border-white/10">
                   <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center">
                       A
                     </div>
                     <div>
-                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Aman Verma</p>
+                      <p class="font-bold text-white text-[11px]">Aman Verma</p>
                       <p class="text-[10px] text-slate-400">@aman • BCA AI/ML</p>
                     </div>
                   </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">Chat</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold">Chat</span>
                 </div>
               </div>
             </div>
 
-            <!-- SECTION 2: NOT REGISTERED YET (INVITE VIA LINK / WHATSAPP) -->
             <div>
-              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Invite to WeResence</p>
-              
+              <p class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2">Invite to WeResence</p>
               <div class="space-y-1.5">
-                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between border border-slate-100 dark:border-slate-800/60">
+                <div class="p-2 rounded-xl bg-white/5 flex items-center justify-between border border-white/5">
                   <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center">
                       K
                     </div>
                     <div>
-                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Kunal Singh</p>
+                      <p class="font-bold text-white text-[11px]">Kunal Singh</p>
                       <p class="text-[10px] text-slate-400">+91 99444 55566</p>
                     </div>
                   </div>
@@ -541,13 +455,13 @@
                   </button>
                 </div>
 
-                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between border border-slate-100 dark:border-slate-800/60">
+                <div class="p-2 rounded-xl bg-white/5 flex items-center justify-between border border-white/5">
                   <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center">
                       S
                     </div>
                     <div>
-                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Siddharth Roy</p>
+                      <p class="font-bold text-white text-[11px]">Siddharth Roy</p>
                       <p class="text-[10px] text-slate-400">+91 99555 66677</p>
                     </div>
                   </div>
@@ -557,7 +471,123 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
+        <!-- CONTACT PROFILE MODAL -->
+        <div id="contactProfileModal" class="hidden absolute inset-0 bg-obsidian-950 dark:bg-obsidian-950 light:bg-white z-30 flex flex-col rounded-[36px] overflow-hidden">
+          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
+            <h3 class="text-xs font-bold text-white dark:text-white light:text-slate-900">Contact Info</h3>
+            <button onclick="closeContactProfile()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
+              ✕
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+            <div class="text-center py-2">
+              <div id="profileAvatarBig" class="w-16 h-16 rounded-full bg-emerald-500 text-slate-950 font-black text-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                R
+              </div>
+              <h4 id="profileNameBig" class="font-bold text-white dark:text-white light:text-slate-900 text-sm">Rahul Sharma</h4>
+              <p id="profileHandleBig" class="text-xs text-emerald-400 font-semibold mt-0.5">@rahul</p>
+              <p id="profilePhoneBig" class="text-[11px] text-slate-400 mt-0.5">+91 98111 22233</p>
+              
+              <div class="mt-3 p-2.5 rounded-xl bg-white/5 border border-white/5 text-left">
+                <p class="text-[10px] font-mono text-slate-400 uppercase">Bio</p>
+                <p id="profileBioBig" class="text-xs text-slate-200 dark:text-slate-200 light:text-slate-800 mt-0.5">BCA AI/ML Sem 3 • Available on WeResence</p>
+              </div>
+            </div>
+
+            <!-- SECURITY BADGE -->
+            <div class="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2.5">
+              <span>🔒</span>
+              <div>
+                <p class="font-bold text-white text-[11px]">End-to-End Encrypted</p>
+                <p class="text-[10px] text-slate-400">Anti-screenshot & screen recording enabled</p>
+              </div>
+            </div>
+
+            <!-- MUTUAL PRIVATE GALLERY BUTTON -->
+            <div class="pt-2">
+              <button onclick="unlockMutualGallery()" class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 hover:from-emerald-500/20 hover:to-indigo-500/20 border border-emerald-500/30 text-left transition-all">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                      🔐
+                    </div>
+                    <div>
+                      <p class="font-bold text-white text-xs">Mutual Private Gallery</p>
+                      <p class="text-[10px] text-slate-400">Encrypted shared vault • Password protected</p>
+                    </div>
+                  </div>
+                  <span class="text-emerald-400 font-bold text-xs">Open ›</span>
+                </div>
+              </button>
+              <p class="text-[9px] text-slate-400 text-center mt-1.5">
+                Each person uses their own custom password. Only uploader can delete their media.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MUTUAL PRIVATE GALLERY VIEW -->
+        <div id="mutualGalleryModal" class="hidden absolute inset-0 bg-obsidian-950 dark:bg-obsidian-950 light:bg-white z-40 flex flex-col rounded-[36px] overflow-hidden">
+          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs">🔐</span>
+              <div>
+                <h3 class="text-xs font-bold text-white">Mutual Private Vault</h3>
+                <p class="text-[9px] text-emerald-400">Unlocked with your private password</p>
+              </div>
+            </div>
+            <button onclick="closeMutualGallery()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
+              ✕
+            </button>
+          </div>
+
+          <div class="p-2.5 bg-white/5 border-b border-white/5 text-[10px] text-slate-400 text-center">
+            🔒 Anti-screenshot enforced • Peer cannot delete your uploads
+          </div>
+
+          <div id="mutualMediaFeed" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+            <!-- MEDIA 1: YOU -->
+            <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 font-mono text-xs mb-2">
+                📸 Architecture_Diagram.png
+              </div>
+              <div class="flex items-center justify-between text-[10px]">
+                <div>
+                  <span class="font-bold text-white">Uploaded by You</span>
+                  <span class="text-slate-400 block text-[9px]">Today at 16:20 • 2.4 MB</span>
+                </div>
+                <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[9px] transition-colors">
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+
+            <!-- MEDIA 2: PEER -->
+            <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
+              <div class="aspect-video bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 font-mono text-xs mb-2">
+                🎥 DBMS_Practical.mp4
+              </div>
+              <div class="flex items-center justify-between text-[10px]">
+                <div>
+                  <span class="font-bold text-white">Uploaded by Rahul</span>
+                  <span class="text-slate-400 block text-[9px]">Yesterday • 18 MB</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-400 text-[9px] font-medium">
+                  👁️ View Only
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 border-t border-white/[0.08] bg-obsidian-950">
+            <button onclick="addMediaToVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs">
+              <span>➕</span>
+              <span>Add Photo or Video to Mutual Vault</span>
+            </button>
           </div>
         </div>
 
@@ -565,140 +595,125 @@
     </div>
   </section>
 
-  <!-- HOW TO INSTALL GUIDE (3 SIMPLE STEPS) -->
-  <section id="how-to-install" class="max-w-4xl mx-auto px-6 py-16 border-t border-slate-200/80 dark:border-slate-800/80">
-    <div class="text-center mb-12">
-      <h2 class="wordmark text-2xl sm:text-3xl font-black text-slate-950 dark:text-white mb-2">
-        How to Install on Your Phone
+  <!-- ARCHITECTURE & SECURITY BENTO GRID -->
+  <section id="architecture" class="max-w-5xl mx-auto px-6 py-20 border-t border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] relative z-10">
+    <div class="text-center mb-16">
+      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Zero-Trust Model</span>
+      <h2 class="wordmark text-3xl sm:text-4xl font-extrabold text-white dark:text-white light:text-slate-950 mt-1.5">
+        Security Built for Adversarial Environments
       </h2>
-      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-        Takes less than 30 seconds. No complicated steps.
+      <p class="text-sm text-slate-400 dark:text-slate-400 light:text-slate-600 max-w-xl mx-auto mt-2">
+        Why no telecom company, snoop, or government interceptor can read your conversations.
       </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       
-      <!-- STEP 1 -->
-      <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center mb-3">
-          1
+      <!-- BENTO 1: DUAL RATChET E2EE -->
+      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-base mb-4">
+          🔐
         </div>
-        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Download APK</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          Tap the download button. The APK file will save directly into your phone's downloads folder.
+        <h3 class="text-base font-bold text-white dark:text-white light:text-slate-900 mb-2">Double Ratchet E2EE</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed mb-4">
+          Every message generates an ephemeral ratchet key over Curve25519 with AES-256-GCM. Compromising one key mathematically reveals zero past or future messages.
         </p>
+        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-emerald-400">
+          Curve25519 • HMAC-SHA256
+        </span>
       </div>
 
-      <!-- STEP 2 -->
-      <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center mb-3">
-          2
+      <!-- BENTO 2: PORT 8901 CELLULAR STEALTH -->
+      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
+        <div class="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-base mb-4">
+          📡
         </div>
-        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Tap to Install</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          Open the file. If Android asks, tap <b>"Allow from this source"</b> to finish installation.
+        <h3 class="text-base font-bold text-white dark:text-white light:text-slate-900 mb-2">Port 8901 Cellular Stealth</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed mb-4">
+          Offline messages travel as raw binary byte arrays on Port 8901. Telecom operators see random radio noise; default SMS apps ignore them with 0% inbox leakage.
         </p>
+        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-teal-400">
+          SmsManager.sendDataMessage()
+        </span>
       </div>
 
-      <!-- STEP 3 -->
-      <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center mb-3">
-          3
+      <!-- BENTO 3: HARDWARE SHIELD -->
+      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
+        <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-base mb-4">
+          🛡️
         </div>
-        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Start Chatting</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          Log in with your number or Google account. Set your Master PIN and you're good to go.
+        <h3 class="text-base font-bold text-white dark:text-white light:text-slate-900 mb-2">Hardware Window Shield</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed mb-4">
+          Android <span class="font-mono text-emerald-400">FLAG_SECURE</span> blocks all screenshot attempts, screen recorders, and app switcher preview leaks at the GPU surface level.
         </p>
+        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-indigo-400">
+          SurfaceFlinger Hardware Block
+        </span>
       </div>
 
     </div>
   </section>
 
-  <!-- FEATURES (USER-FIRST, ZERO JARGON) -->
-  <section id="features" class="max-w-4xl mx-auto px-6 py-16 border-t border-slate-200/80 dark:border-slate-800/80">
+  <!-- HOW TO INSTALL GUIDE (3 MINIMAL STEPS) -->
+  <section id="install" class="max-w-4xl mx-auto px-6 py-16 border-t border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] relative z-10">
     <div class="text-center mb-12">
-      <h2 class="wordmark text-2xl sm:text-3xl font-black text-slate-950 dark:text-white mb-2">
-        Built for Real Life
+      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Direct APK Distribution</span>
+      <h2 class="wordmark text-2xl sm:text-3xl font-extrabold text-white dark:text-white light:text-slate-950 mt-1">
+        30-Second Installation
       </h2>
-      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-        Everything you need to talk freely and keep your private life private.
-      </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- FEATURE 1 -->
-      <div class="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-        <div class="flex items-start gap-3.5">
-          <span class="text-xl">⚡</span>
-          <div>
-            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Automatic Zero-Tap Shift</h4>
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Zero manual switches. The second your mobile data or Wi-Fi drops, WeResence automatically shifts to offline SMS inside the exact same chat screen, at the exact same instant typing speed.
-            </p>
-          </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="p-6 rounded-2xl glass-card">
+        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
+          01
         </div>
+        <h3 class="text-sm font-bold text-white dark:text-white light:text-slate-900 mb-1">Download APK</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed">
+          Tap the download button. The <span class="font-mono text-emerald-400">WeResence-v1.0.apk</span> package saves directly to your device.
+        </p>
       </div>
 
-      <!-- FEATURE 2 -->
-      <div class="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-        <div class="flex items-start gap-3.5">
-          <span class="text-xl">🚫</span>
-          <div>
-            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Zero Screen Snooping</h4>
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Nobody can screenshot or screen record your conversations. The screen goes black in app switchers so your chats stay yours.
-            </p>
-          </div>
+      <div class="p-6 rounded-2xl glass-card">
+        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
+          02
         </div>
+        <h3 class="text-sm font-bold text-white dark:text-white light:text-slate-900 mb-1">Permit Install</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed">
+          Open the APK file. When prompted by Android, toggle <b>"Allow from this source"</b> to finalize direct installation.
+        </p>
       </div>
 
-      <!-- FEATURE 3 -->
-      <div class="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-        <div class="flex items-start gap-3.5">
-          <span class="text-xl">🗑️</span>
-          <div>
-            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">True "Delete for Everyone"</h4>
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Sent something by accident? Delete it anytime and it completely vanishes from both your phone and the receiver's phone.
-            </p>
-          </div>
+      <div class="p-6 rounded-2xl glass-card">
+        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
+          03
         </div>
+        <h3 class="text-sm font-bold text-white dark:text-white light:text-slate-900 mb-1">Verify Number</h3>
+        <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 leading-relaxed">
+          Launch WeResence, verify your SIM phone number, configure your Vault PIN, and start chatting freely.
+        </p>
       </div>
-
-      <!-- FEATURE 4 -->
-      <div class="p-5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
-        <div class="flex items-start gap-3.5">
-          <span class="text-xl">✨</span>
-          <div>
-            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Resence AI at Your Fingertips</h4>
-            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Get answers, draft notes, or solve problems instantly. Resence AI is pinned right at the top of your chat list.
-            </p>
-          </div>
-        </div>
-      </div>
-
     </div>
   </section>
 
   <!-- FOOTER -->
-  <footer class="w-full border-t border-slate-200/80 dark:border-slate-800/80 py-10 text-center text-xs text-slate-400 dark:text-slate-500">
-    <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="wordmark text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight">
+  <footer class="w-full border-t border-white/[0.08] dark:border-white/[0.08] light:border-black/[0.08] py-10 text-center text-xs text-slate-500 relative z-10">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="wordmark text-lg font-black text-slate-200 dark:text-slate-200 light:text-slate-800 tracking-tight">
         WeResence
       </div>
-      <p>© 2026 Resence. Simple, sovereign messaging.</p>
-      <div class="flex items-center gap-4">
-        <a href="https://resence.in" target="_blank" class="hover:text-slate-900 dark:hover:text-white transition-colors">resence.in</a>
-        <a href="https://github.com/Piyush-Thakur7" target="_blank" class="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
+      <p>© 2026 Resence. Sovereign communication architecture by Piyush Singh.</p>
+      <div class="flex items-center gap-5">
+        <a href="https://resence.in" target="_blank" class="hover:text-emerald-400 transition-colors">resence.in</a>
+        <a href="https://github.com/Piyush-Thakur7/weresence" target="_blank" class="hover:text-emerald-400 transition-colors">GitHub Engine</a>
+        <a href="https://linkedin.com/in/piyush-singh2007" target="_blank" class="hover:text-emerald-400 transition-colors">Founder</a>
       </div>
     </div>
   </footer>
 
-  <!-- SCRIPT FOR THEME & LIVE PREVIEW MOCK -->
+  <!-- SCRIPT FOR THEME, OFFLINE ENGINE SIMULATOR & MUTUAL VAULT -->
   <script>
-    // Theme toggle
+    // Theme Switcher
     let isDark = true;
     function toggleTheme() {
       isDark = !isDark;
@@ -706,14 +721,16 @@
       const icon = document.getElementById('themeIcon');
       if (isDark) {
         html.classList.add('dark');
+        html.classList.remove('light');
         icon.textContent = '☀️';
       } else {
         html.classList.remove('dark');
+        html.classList.add('light');
         icon.textContent = '🌙';
       }
     }
 
-    // Live Mock Preview State
+    // Live Simulator Engine
     let isOnline = true;
     let smsUsed = 84;
     const maxSms = 100;
@@ -731,34 +748,32 @@
       pill.className = "flex justify-center my-2";
 
       if (isOnline) {
-        netBtn.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30";
-        netBtn.textContent = "🟢 Online";
-        avatar.className = "w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm";
+        netBtn.className = "px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:scale-105 active:scale-95 transition-transform";
+        netBtn.textContent = "🟢 ONLINE (Tap to Test Drop)";
+        avatar.className = "w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-sm";
         chatStatus.textContent = "Ready to assist";
-        chatStatus.className = "text-[10px] text-emerald-500 mt-0.5";
+        chatStatus.className = "text-[10px] text-emerald-400 mt-0.5 font-medium";
         mediaBtn.style.opacity = "1";
         mediaBtn.disabled = false;
         mockInput.placeholder = "Write a message...";
 
-        // WhatsApp style inline notification pill
         pill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium border border-emerald-500/20 shadow-xs">
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20">
             🌐 Reconnected to Internet • Unlimited Mode active
           </span>
         `;
       } else {
-        netBtn.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30";
-        netBtn.textContent = "🟡 Offline";
-        avatar.className = "w-8 h-8 rounded-full bg-slate-400 dark:bg-slate-600 flex items-center justify-center text-white text-xs font-bold shadow-sm";
+        netBtn.className = "px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:scale-105 active:scale-95 transition-transform";
+        netBtn.textContent = "🟡 OFFLINE (Auto-Shift Active)";
+        avatar.className = "w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-xs font-bold shadow-sm opacity-50";
         chatStatus.textContent = "Paused (No Internet)";
         chatStatus.className = "text-[10px] text-slate-400 mt-0.5";
         mediaBtn.style.opacity = "0.3";
         mediaBtn.disabled = true;
         mockInput.placeholder = `Type offline SMS (${smsUsed}/${maxSms})...`;
 
-        // WhatsApp style inline notification pill
         pill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium border border-slate-200 dark:border-slate-700/80 shadow-xs">
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-400 font-medium border border-white/10">
             📡 Switched to Offline SMS • ${smsUsed}/${maxSms} today
           </span>
         `;
@@ -786,20 +801,19 @@
       userBubble.innerHTML = `
         <div class="max-w-[78%] p-3 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-sm">
           ${text}
-          <div class="text-[9px] opacity-75 text-right mt-1">${isOnline ? 'Delivered ✓✓' : 'Sent via Offline SMS ✓'}</div>
+          <div class="text-[9px] opacity-75 text-right mt-1 font-mono">${isOnline ? 'Delivered ✓✓' : 'Sent via Port 8901 SMS ✓'}</div>
         </div>
       `;
       feed.appendChild(userBubble);
       input.value = '';
       feed.scrollTop = feed.scrollHeight;
 
-      // Notice if limit reached
       if (!isOnline && smsUsed >= maxSms) {
         const limitPill = document.createElement('div');
         limitPill.className = "flex justify-center my-2";
         limitPill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium border border-amber-500/20">
-            ☁️ Daily 100 SMS reached • Remaining messages saved in cloud
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">
+            ☁️ Daily 100 SMS reached • Remaining messages saved in cloud outbox
           </span>
         `;
         feed.appendChild(limitPill);
@@ -807,17 +821,16 @@
         return;
       }
 
-      // Resence AI reply if online
       if (isOnline) {
         setTimeout(() => {
           const aiBubble = document.createElement('div');
           aiBubble.className = "flex items-start gap-2";
           aiBubble.innerHTML = `
-            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0">
+            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0 font-bold">
               AI
             </div>
-            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm">
-              Got it! In online mode, rich media and AI responses work seamlessly. Notice how smooth the inline pills appear when you tap "Online".
+            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5">
+              Understood! Online mode supports full multimodal capabilities and rich voice. Try toggling the network above to witness the auto-shift.
             </div>
           `;
           feed.appendChild(aiBubble);
@@ -826,23 +839,23 @@
       }
     }
 
+    // Tab Navigation
     function switchTab(tab) {
       const chatFeed = document.getElementById('mockChatFeed');
       const commFeed = document.getElementById('mockCommunityFeed');
+      const settFeed = document.getElementById('mockSettingsFeed');
       const inputBar = document.getElementById('mockInputBar');
       const chatTitle = document.getElementById('mockChatTitle');
       const chatStatus = document.getElementById('mockChatStatus');
 
-      const settFeed = document.getElementById('mockSettingsFeed');
-
       const tabs = ['Chats', 'Communities', 'Ai', 'Settings'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab' + t);
-        if (btn) btn.className = "flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all";
+        if (btn) btn.className = "flex flex-col items-center text-slate-400 hover:text-white transition-all";
       });
 
       if (tab === 'chats') {
-        document.getElementById('tabChats').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        document.getElementById('tabChats').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
         chatFeed.classList.remove('hidden');
         commFeed.classList.add('hidden');
         settFeed.classList.add('hidden');
@@ -850,15 +863,15 @@
         chatTitle.textContent = "Resence AI";
         chatStatus.textContent = isOnline ? "Ready to assist" : "Paused (No Internet)";
       } else if (tab === 'communities') {
-        document.getElementById('tabCommunities').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        document.getElementById('tabCommunities').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
         chatFeed.classList.add('hidden');
         commFeed.classList.remove('hidden');
         settFeed.classList.add('hidden');
         inputBar.classList.add('hidden');
         chatTitle.textContent = "Campus Communities";
-        chatStatus.textContent = "100% Online (No SMS used)";
+        chatStatus.textContent = "100% Online (Zero SMS used)";
       } else if (tab === 'ai') {
-        document.getElementById('tabAi').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        document.getElementById('tabAi').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
         chatFeed.classList.remove('hidden');
         commFeed.classList.add('hidden');
         settFeed.classList.add('hidden');
@@ -866,7 +879,7 @@
         chatTitle.textContent = "Resence AI Companion";
         chatStatus.textContent = isOnline ? "Active • 2.5 Flash" : "Disabled (Offline)";
       } else if (tab === 'settings') {
-        document.getElementById('tabSettings').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        document.getElementById('tabSettings').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
         chatFeed.classList.add('hidden');
         commFeed.classList.add('hidden');
         settFeed.classList.remove('hidden');
@@ -876,24 +889,23 @@
       }
     }
 
+    // Contact Discovery & Modal
     function openContactsModal() {
       document.getElementById('contactsModal').classList.remove('hidden');
     }
-
     function closeContactsModal() {
       document.getElementById('contactsModal').classList.add('hidden');
     }
-
     function selectContact(name, handle, phone) {
       closeContactsModal();
       switchTab('chats');
       document.getElementById('mockChatTitle').textContent = `${name} (${handle})`;
-      document.getElementById('mockChatStatus').textContent = isOnline ? "Online • End-to-End Encrypted" : "Offline • SMS Active";
+      document.getElementById('mockChatStatus').textContent = isOnline ? "Online • E2EE" : "Offline • Port 8901 SMS";
       
       const feed = document.getElementById('mockChatFeed');
       feed.innerHTML = `
         <div class="flex justify-center my-1">
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-medium border border-slate-200/60 dark:border-slate-700/60">
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-400 font-medium border border-white/10">
             🔒 Chat with ${name} (${phone}) • Verified WeResence Account
           </span>
         </div>
@@ -901,29 +913,25 @@
           <div class="w-6 h-6 rounded-full bg-emerald-500 text-[10px] text-slate-950 font-bold flex items-center justify-center flex-shrink-0">
             ${name[0]}
           </div>
-          <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+          <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5">
             Hey! I saw you are on WeResence too.
           </div>
         </div>
       `;
     }
-
     function inviteContact(name, phone) {
       const inviteMsg = `Hey ${name}, join me on WeResence! Chat privately with anti-screenshot protection, even without internet via offline SMS: https://weresence.resence.in`;
       navigator.clipboard?.writeText(inviteMsg).catch(() => {});
       alert(`Invite link copied to clipboard!\n\nMessage:\n"${inviteMsg}"\n\nYou can now paste and send this on WhatsApp, SMS, or Instagram.`);
     }
 
-    
-    // Contact Profile & Mutual Gallery Logic
+    // Mutual Private Gallery & Profile
     function openContactProfile() {
       document.getElementById('contactProfileModal').classList.remove('hidden');
     }
-
     function closeContactProfile() {
       document.getElementById('contactProfileModal').classList.add('hidden');
     }
-
     function unlockMutualGallery() {
       const pin = prompt("Enter your personal custom password for this Mutual Gallery (Default: 7777):", "7777");
       if (pin === "7777") {
@@ -933,11 +941,9 @@
         alert("Incorrect custom password for this mutual vault.");
       }
     }
-
     function closeMutualGallery() {
       document.getElementById('mutualGalleryModal').classList.add('hidden');
     }
-
     function deleteGalleryMedia(btn, isUploader) {
       if (!isUploader) {
         alert("Permission Denied: You cannot delete media uploaded by the other person. Only the uploader can delete their own media.");
@@ -948,23 +954,22 @@
         alert("Media deleted permanently from Mutual Vault.");
       }
     }
-
     function addMediaToVault() {
       const name = prompt("Enter photo/video title to drop into Mutual Vault:", "Campus_Event_Photo.jpg");
       if (name && name.trim()) {
         const feed = document.getElementById('mutualMediaFeed');
         const card = document.createElement('div');
-        card.className = "p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800";
+        card.className = "p-2.5 rounded-2xl bg-white/5 border border-white/10";
         card.innerHTML = `
-          <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-bold text-xs mb-2">
+          <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 font-mono text-xs mb-2">
             📸 ${name.trim()}
           </div>
           <div class="flex items-center justify-between text-[10px]">
             <div>
-              <span class="font-bold text-slate-900 dark:text-white">Uploaded by You</span>
+              <span class="font-bold text-white">Uploaded by You</span>
               <span class="text-slate-400 block text-[9px]">Just now • Encrypted</span>
             </div>
-            <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold text-[9px] transition-colors">
+            <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[9px] transition-colors">
               🗑️ Delete
             </button>
           </div>
@@ -974,33 +979,8 @@
         alert("Added to Mutual Vault! Only you can delete this. Peer can only view.");
       }
     }
-
-    function editBio() {
-      const current = document.getElementById('bioText').textContent;
-      const updated = prompt("Update your WeResence Bio:", current);
-      if (updated && updated.trim()) {
-        document.getElementById('bioText').textContent = updated.trim();
-      }
-    }
 
-    let googleLinked = true;
-    function toggleGoogleLink() {
-      googleLinked = !googleLinked;
-      const status = document.getElementById('googleLinkStatus');
-      if (googleLinked) {
-        status.textContent = "piyush@resence.in (Connected)";
-      } else {
-        status.textContent = "Not connected (Tap to link Google account)";
-      }
-    }
-
-    function handleLogout() {
-      if (confirm("Are you sure you want to log out of WeResence? Your encrypted vault will be locked.")) {
-        alert("Logged out successfully. Enter phone number to sign back in.");
-        switchTab('chats');
-      }
-    }
-
+    // Ghost PIN & Settings
     function promptGhostPin() {
       const pin = prompt("Enter Vault PIN (Default Master: 1234, Decoy: 0000):", "1234");
       if (pin === "0000") {
@@ -1009,6 +989,29 @@
         alert("Master PIN verified. Sovereign vault unlocked.");
       } else if (pin) {
         alert("Incorrect PIN.");
+      }
+    }
+    function editBio() {
+      const current = document.getElementById('bioText').textContent;
+      const updated = prompt("Update your WeResence Bio:", current);
+      if (updated && updated.trim()) {
+        document.getElementById('bioText').textContent = updated.trim();
+      }
+    }
+    let googleLinked = true;
+    function toggleGoogleLink() {
+      googleLinked = !googleLinked;
+      const status = document.getElementById('googleLinkStatus');
+      if (googleLinked) {
+        status.textContent = "piyush@resence.in (Active)";
+      } else {
+        status.textContent = "Not connected (Tap to link Google account)";
+      }
+    }
+    function handleLogout() {
+      if (confirm("Are you sure you want to log out of WeResence? Your encrypted vault will be locked.")) {
+        alert("Logged out successfully. Enter phone number to sign back in.");
+        switchTab('chats');
       }
     }
   </script>
