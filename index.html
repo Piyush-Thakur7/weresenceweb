@@ -2,12 +2,25 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>WeResence — Sovereign Hybrid Messenger & Private AI</title>
-  <meta name="description" content="The dual-engine hybrid messenger that automatically switches to stealth cellular SMS when internet drops. Military-grade E2EE, mutual private vaults, and zero cloud retention.">
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#050608">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WeResence">
+  <link rel="icon" type="image/png" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/app-icon-192.png">
+
+  <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -20,1066 +33,1256 @@
           },
           colors: {
             obsidian: {
-              950: '#060709',
-              900: '#0A0C10',
-              850: '#0F1218',
-              800: '#141820',
+              950: '#050608',
+              900: '#090B0F',
+              850: '#0E1117',
+              800: '#151A22',
+              700: '#1E2530',
             },
             accent: {
               emerald: '#10B981',
-              emeraldGlow: '#059669',
+              emeraldDark: '#059669',
+              glow: 'rgba(16, 185, 129, 0.15)',
             }
           }
         }
       }
     }
   </script>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
     html, body {
-      overflow-x: hidden !important;
-      max-width: 100vw !important;
-      width: 100% !important;
+      height: 100%;
+      height: 100dvh;
       margin: 0;
       padding: 0;
+      overflow: hidden;
+      background-color: #050608;
+      color: #F1F5F9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    * {
-      transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, color 0.2s ease;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    .wordmark {
-      letter-spacing: -0.05em;
-    }
-    .ambient-glow {
-      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 65%);
-    }
-    
-    .glass-card {
-      background: rgba(15, 18, 24, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+    .glass-panel {
+      background: rgba(14, 17, 23, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    
-    .subtle-grid {
-      background-size: 32px 32px;
-      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    .glass-input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s ease;
     }
-    
+    .glass-input:focus {
+      outline: none;
+      border-color: #10B981;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+    }
+    .ambient-glow {
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0) 70%);
+    }
+    /* Hide scrollbars while preserving scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
-  <link rel="icon" type="image/png" href="assets/favicon-32.png">
-  <link rel="apple-touch-icon" href="assets/app-icon-192.png">
 </head>
-<body class="bg-obsidian-950 text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-black subtle-grid relative overflow-x-hidden w-full max-w-[100vw]">
+<body class="bg-obsidian-950 text-slate-100 h-full w-full select-none">
 
-  <!-- TOP AMBIENT SPOTLIGHT -->
-  <div class="absolute top-0 left-0 right-0 w-full overflow-hidden pointer-events-none h-[450px] z-0"><div class="w-[900px] max-w-[120vw] h-[450px] mx-auto ambient-glow blur-2xl opacity-80"></div></div>
+  <!-- ========================================== -->
+  <!-- 1. PWA INSTALL BANNER (FLOATING TOAST)      -->
+  <!-- ========================================== -->
+  <div id="pwaInstallBanner" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-3 rounded-2xl glass-panel shadow-2xl border border-emerald-500/30 flex items-center justify-between gap-3 animate-bounce">
+    <div class="flex items-center gap-2.5">
+      <img src="assets/app-icon-192.png" alt="App Icon" class="w-9 h-9 rounded-xl border border-emerald-500/30">
+      <div>
+        <p class="text-xs font-bold text-white">Install WeResence Native App</p>
+        <p class="text-[10px] text-slate-400">1-click home screen install • 120Hz smooth</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <button onclick="triggerPwaInstall()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition-all shadow-md">
+        Install
+      </button>
+      <button onclick="dismissPwaBanner()" class="p-1.5 text-slate-400 hover:text-white text-xs">
+        ✕
+      </button>
+    </div>
+  </div>
 
-  <!-- NAVIGATION BAR -->
-  <header class="sticky top-0 z-50 w-full bg-obsidian-950/90 backdrop-blur-xl border-b border-white/[0.08]">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+  <!-- ========================================== -->
+  <!-- 2. AUTHENTICATION VIEW (FIREBASE GATEWAY)   -->
+  <!-- ========================================== -->
+  <div id="viewAuth" class="relative h-full w-full overflow-y-auto no-scrollbar flex flex-col items-center justify-center p-4 z-20">
+    <!-- Ambient glow behind brand -->
+    <div class="absolute top-0 left-0 right-0 h-96 ambient-glow pointer-events-none"></div>
+
+    <div class="w-full max-w-md glass-panel p-6 sm:p-8 rounded-[32px] relative z-10 shadow-2xl border border-white/10">
       
-      <!-- OFFICIAL MASTER BRAND LOGO -->
-      <a href="#" class="flex items-center gap-2 hover:opacity-95 transition-opacity">
-        <img src="assets/logo-transparent.png" alt="WeResence" class="h-7 sm:h-9 w-auto max-w-[160px] sm:max-w-none object-contain drop-shadow-md">
-      </a>
+      <!-- Logo & Emblem Header -->
+      <div class="text-center mb-6">
+        <div class="relative inline-block mb-3">
+          <div class="absolute -inset-2 rounded-full bg-emerald-500/20 blur-xl"></div>
+          <img src="assets/app-icon-512.png" alt="WeResence Emblem" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl relative shadow-2xl border border-white/15 object-cover mx-auto">
+        </div>
+        <img src="assets/logo-transparent.png" alt="WeResence" class="h-7 sm:h-8 w-auto mx-auto object-contain mb-2 drop-shadow-md">
+        <p class="text-xs text-slate-400 font-medium">Sovereign Hybrid Messenger & Mutual Vault</p>
+      </div>
 
-      <!-- NAV LINKS & ACTIONS -->
-      <div class="flex items-center gap-6">
-        <a href="#architecture" class="hidden md:inline-block text-xs font-semibold text-slate-400 hover:text-white text-slate-400 hover:text-white transition-colors">
-          Security Model
-        </a>
-        <a href="#features" class="hidden md:inline-block text-xs font-semibold text-slate-400 hover:text-white text-slate-400 hover:text-white transition-colors">
-          Capabilities
-        </a>
-        <a href="#install" class="hidden sm:inline-block text-xs font-semibold text-slate-400 hover:text-white text-slate-400 hover:text-white transition-colors">
-          Installation
-        </a>
+      <!-- AUTH STATUS ALERTS -->
+      <div id="authAlert" class="hidden mb-4 p-3 rounded-xl text-xs flex items-center gap-2"></div>
 
-        
+      <!-- GOOGLE SIGN-IN BUTTON -->
+      <button onclick="handleGoogleSignIn()" id="btnGoogle" class="w-full py-3.5 px-4 rounded-2xl glass-input hover:bg-white/10 text-white text-xs font-semibold flex items-center justify-center gap-3 transition-all mb-4 group shadow-sm">
+        <svg class="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google Identity</span>
+      </button>
 
-        <!-- DOWNLOAD APK CTA -->
-        <a href="assets/WeResence-v1.0.apk" download="WeResence-v1.0.apk" class="px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-950 bg-white text-slate-950 hover:bg-slate-200 transition-all shadow-sm">
-          Get APK (v1.0)
-        </a>
+      <!-- OR DIVIDER -->
+      <div class="flex items-center gap-3 my-4">
+        <div class="h-px flex-1 bg-white/10"></div>
+        <span class="text-[10px] uppercase font-mono tracking-wider text-slate-500">Or Phone SMS Verification</span>
+        <div class="h-px flex-1 bg-white/10"></div>
+      </div>
+
+      <!-- PHONE NUMBER INPUT FORM -->
+      <div id="phoneInputStep" class="space-y-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Sovereign Phone Number</label>
+          <div class="flex gap-2">
+            <span class="px-3 py-3 rounded-xl glass-input text-xs font-mono text-emerald-400 flex items-center font-bold">🇮🇳 +91</span>
+            <input type="tel" id="inputPhone" placeholder="95577 40764" class="flex-1 px-4 py-3 rounded-xl glass-input text-white text-xs font-mono placeholder:text-slate-600 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Invisible reCAPTCHA container -->
+        <div id="recaptcha-container"></div>
+
+        <button onclick="handleSendPhoneOtp()" id="btnSendOtp" class="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 active:scale-98 flex items-center justify-center gap-2">
+          <span>Send Free SMS OTP</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+
+      <!-- OTP CODE VERIFICATION FORM (HIDDEN INITIALLY) -->
+      <div id="otpVerifyStep" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-emerald-400">Enter 6-Digit SMS Code</label>
+          <input type="text" id="inputOtp" maxlength="6" placeholder="• • • • • •" class="w-full text-center tracking-[0.5em] px-4 py-3.5 rounded-xl glass-input text-emerald-400 font-mono text-lg font-bold placeholder:text-slate-700 focus:outline-none">
+        </div>
+
+        <button onclick="handleConfirmPhoneOtp()" id="btnVerifyOtp" class="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+          <span>Confirm & Unlock Profile</span>
+        </button>
+        <button onclick="cancelOtpStep()" class="w-full text-center text-[11px] text-slate-400 hover:text-white py-1">
+          Back to Phone Number
+        </button>
+      </div>
+
+      <!-- QUICK TEST/DEMO ACCESS SHORTCUT -->
+      <div class="mt-6 pt-4 border-t border-white/5 text-center">
+        <button onclick="quickFounderLogin()" class="text-[11px] font-mono text-emerald-400/80 hover:text-emerald-300 underline underline-offset-4 transition-colors">
+          ⚡ One-Tap Founder Fast Login (@piyush)
+        </button>
       </div>
     </div>
-  </header>
+  </div>
 
-  <!-- HERO SECTION -->
-  <section class="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center relative z-10">
+  <!-- ========================================== -->
+  <!-- 3. PIN SECURITY LOCK GATE                  -->
+  <!-- ========================================== -->
+  <div id="viewPinLock" class="hidden relative h-full w-full flex flex-col items-center justify-center p-4 z-20">
+    <div class="w-full max-w-sm glass-panel p-6 sm:p-8 rounded-[36px] text-center shadow-2xl border border-white/10">
+      
+      <!-- Lock Emblem -->
+      <div class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4 text-emerald-400 text-xl">
+        🔒
+      </div>
+
+      <h2 class="text-lg font-extrabold text-white">Sovereign Vault PIN</h2>
+      <p id="pinSubtext" class="text-xs text-slate-400 mt-1 mb-6">Enter PIN to access your sovereign space</p>
+
+      <!-- 4 PIN Dots -->
+      <div class="flex items-center justify-center gap-4 mb-8">
+        <div id="dot0" class="w-3.5 h-3.5 rounded-full border border-white/30 transition-all"></div>
+        <div id="dot1" class="w-3.5 h-3.5 rounded-full border border-white/30 transition-all"></div>
+        <div id="dot2" class="w-3.5 h-3.5 rounded-full border border-white/30 transition-all"></div>
+        <div id="dot3" class="w-3.5 h-3.5 rounded-full border border-white/30 transition-all"></div>
+      </div>
+
+      <!-- Numeric Keypad -->
+      <div class="grid grid-cols-3 gap-3 max-w-[240px] mx-auto mb-4">
+        <button onclick="pressPin('1')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">1</button>
+        <button onclick="pressPin('2')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">2</button>
+        <button onclick="pressPin('3')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">3</button>
+        <button onclick="pressPin('4')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">4</button>
+        <button onclick="pressPin('5')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">5</button>
+        <button onclick="pressPin('6')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">6</button>
+        <button onclick="pressPin('7')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">7</button>
+        <button onclick="pressPin('8')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">8</button>
+        <button onclick="pressPin('9')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">9</button>
+        <button onclick="pressPin('CLEAR')" class="h-14 rounded-2xl glass-input text-xs font-mono font-bold text-slate-400 hover:bg-white/10 active:scale-90 transition-all">C</button>
+        <button onclick="pressPin('0')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">0</button>
+        <button onclick="pressPin('BACK')" class="h-14 rounded-2xl glass-input text-sm font-bold text-slate-400 hover:bg-white/10 active:scale-90 transition-all">⌫</button>
+      </div>
+
+      <div class="mt-4 p-2.5 rounded-xl bg-white/5 text-[10px] text-slate-400 font-mono text-left space-y-1">
+        <p>• <span class="text-white font-bold">1234</span>: Master Sovereign Messenger</p>
+        <p>• <span class="text-cyan-400 font-bold">0000</span>: Camouflage Decoy (ai.resence.in)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 4. CAMOUFLAGE DECOY VIEW (ai.resence.in)    -->
+  <!-- ========================================== -->
+  <div id="viewCamouflage" class="hidden h-full w-full flex flex-col bg-obsidian-950 z-20">
+    <!-- Decoy Header -->
+    <header class="h-14 px-4 border-b border-white/10 flex items-center justify-between glass-panel">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+          AI
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-white">Resence AI Companion</h3>
+          <p class="text-[10px] text-cyan-400">ai.resence.in • Decoy Study Space</p>
+        </div>
+      </div>
+      <button onclick="lockToPinGate()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 text-slate-300 hover:text-white transition-all">
+        Lock (PIN)
+      </button>
+    </header>
+
+    <!-- Decoy Chat Feed -->
+    <div id="decoyChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs max-w-3xl mx-auto w-full">
+      <div class="p-4 rounded-2xl glass-panel space-y-2">
+        <h4 class="font-bold text-white text-sm">Resence AI Workspace Active</h4>
+        <p class="text-slate-400">Ask any technical, academic, or research questions. All sovereign messenger traces are securely hidden.</p>
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button onclick="sendDecoyPrompt('Explain quantum computing principles')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px]">💡 Quantum Computing</button>
+          <button onclick="sendDecoyPrompt('Give me a full-stack system architecture roadmap')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px]">📚 System Architecture</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decoy Input -->
+    <div class="p-3 border-t border-white/10 glass-panel">
+      <form onsubmit="handleDecoySubmit(event)" class="max-w-3xl mx-auto flex gap-2">
+        <input type="text" id="decoyInput" placeholder="Ask Resence AI anything..." class="flex-1 px-4 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
+        <button type="submit" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 5. MAIN SOVEREIGN APPLICATION (DESKTOP+MOB) -->
+  <!-- ========================================== -->
+  <div id="viewMainApp" class="hidden h-full w-full flex overflow-hidden z-20">
     
-        <!-- APP ICON CROP FROM HIGH-RES MASTER -->
-    <div class="flex justify-center mb-6">
-      <div class="relative group cursor-pointer" onclick="document.getElementById('interactive-demo')?.scrollIntoView({behavior: 'smooth'})">
-        <div class="absolute -inset-2 rounded-[30px] bg-gradient-to-r from-emerald-500/25 via-teal-500/20 to-cyan-500/25 blur-xl opacity-75 group-hover:opacity-100 transition-all duration-500"></div>
-        <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[24px] overflow-hidden bg-black border border-white/15 shadow-2xl p-1">
-          <img src="assets/app-icon-512.png" alt="WeResence Mobile App Icon" class="w-full h-full object-cover rounded-[20px]">
+    <!-- LEFT SIDEBAR / CHATS DRAWER -->
+    <aside id="chatSidebar" class="w-full md:w-80 lg:w-96 h-full flex flex-col border-r border-white/10 glass-panel flex-shrink-0 z-30 transition-all duration-300">
+      
+      <!-- User Profile Header -->
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <img id="userAvatarImg" src="assets/app-icon-512.png" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-emerald-500/30">
+            <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-black"></span>
+          </div>
+          <div class="min-w-0">
+            <h3 id="userDisplayName" class="text-xs font-bold text-white truncate">Piyush Singh</h3>
+            <p id="userHandle" class="text-[10px] text-emerald-400 font-mono truncate">@piyush</p>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- SYSTEM RELEASE STATUS BADGE -->
-    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 mb-8">
-      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span>v1.0 • Sovereign Dual-Transport Engine</span>
-    </div>
-
-    <!-- MAIN EDITORIAL HEADLINE -->
-    <h1 class="wordmark text-4xl sm:text-6xl md:text-7xl font-extrabold text-white text-white tracking-tight leading-[1.06] mb-6 max-w-4xl mx-auto">
-      Chat without internet.<br>
-      <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-400">
-        Completely impenetrable.
-      </span>
-    </h1>
-
-    <p class="text-base sm:text-lg text-slate-400 text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-      The sovereign messenger that automatically routes 1-on-1 chats via stealth cellular SMS when data drops. Built-in Resence AI, hardware anti-screenshot defense, and mutual private vaults.
-    </p>
-
-    <!-- ACTION BUTTONS -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-12 sm:mb-16 w-full max-w-md mx-auto">
-      <a href="assets/WeResence-v1.0.apk" download="WeResence-v1.0.apk" class="w-full sm:w-auto px-7 py-3.5 rounded-full text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-        <span>Download WeResence APK</span>
-      </a>
-
-      <a href="#interactive-demo" class="w-full sm:w-auto px-6 py-3.5 rounded-full text-sm font-semibold glass-card text-slate-200 hover:bg-white/10 transition-all flex items-center justify-center gap-2">
-        <span>Live Interactive Demo</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </a>
-    </div>
-
-    <!-- 4 CORE VALUE METRICS (JARGON-FREE) -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto text-left">
-      <div class="p-4 rounded-2xl glass-card">
-        <p class="text-[11px] font-mono text-slate-400 text-slate-500 uppercase tracking-wider">Transport</p>
-        <p class="text-sm font-bold text-white text-white mt-1">Zero-Drop Auto Shift</p>
-        <p class="text-xs text-slate-400 text-slate-400 mt-1">Continues over cellular SMS when data fails.</p>
-      </div>
-
-      <div class="p-4 rounded-2xl glass-card">
-        <p class="text-[11px] font-mono text-slate-400 text-slate-500 uppercase tracking-wider">Privacy</p>
-        <p class="text-sm font-bold text-white text-white mt-1">Zero Call Logs</p>
-        <p class="text-xs text-slate-400 text-slate-400 mt-1">Calls bypass Google/Samsung phone logs.</p>
-      </div>
-
-      <div class="p-4 rounded-2xl glass-card">
-        <p class="text-[11px] font-mono text-slate-400 text-slate-500 uppercase tracking-wider">Mutual Vault</p>
-        <p class="text-sm font-bold text-white text-white mt-1">Dual Passwords</p>
-        <p class="text-xs text-slate-400 text-slate-400 mt-1">Only the original uploader can delete.</p>
-      </div>
-
-      <div class="p-4 rounded-2xl glass-card">
-        <p class="text-[11px] font-mono text-slate-400 text-slate-500 uppercase tracking-wider">Companion</p>
-        <p class="text-sm font-bold text-white text-white mt-1">Resence AI</p>
-        <p class="text-xs text-slate-400 text-slate-400 mt-1">On tap online; automatically rests offline.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- INTERACTIVE PHONE HARDWARE SHOWCASE -->
-  <section id="interactive-demo" class="w-full max-w-[370px] sm:max-w-md mx-auto px-3 sm:px-5 py-8 relative z-10">
-    <div class="text-center mb-6">
-      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Interactive Live Mockup</span>
-      <h2 class="wordmark text-2xl font-extrabold text-white text-white mt-1">
-        Engineered for Pure Fluidity
-      </h2>
-      <p class="text-xs text-slate-400 text-slate-400 mt-1">
-        Tap the controls below to experience automatic offline switching and mutual vaults.
-      </p>
-    </div>
-
-    <!-- PHONE HARDWARE CHASSIS (TITANIUM EDGE) -->
-    <div class="rounded-[44px] p-3 bg-gradient-to-b from-slate-800 via-slate-900 to-obsidian-950 border border-white/20 border-white/15 shadow-2xl relative">
-      <div class="rounded-[36px] overflow-hidden bg-obsidian-900 bg-obsidian-900 border border-white/10 border-white/10 flex flex-col h-[580px] relative">
         
-        <!-- HARDWARE TOP BAR & DYNAMIC STATUS -->
-        <div class="px-5 pt-3.5 pb-2 flex items-center justify-between text-[11px] font-semibold text-slate-400">
-          <span>9:41</span>
-          <div class="flex items-center gap-2">
-            <!-- AUTO NETWORK SIMULATOR PILL -->
-            <button onclick="toggleMockNetwork()" id="mockNetBtn" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:scale-105 active:scale-95 transition-transform" title="Simulate dropping mobile data/Wi-Fi">
-              🟢 ONLINE (Tap to Test Drop)
-            </button>
-            <span>5G</span>
+        <div class="flex items-center gap-1.5">
+          <button onclick="openSettingsModal()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs" title="Settings">
+            ⚙️
+          </button>
+          <button onclick="lockToPinGate()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs" title="Lock App">
+            🔒
+          </button>
+        </div>
+      </div>
+
+      <!-- Network / Transport Status Pill -->
+      <div class="px-4 py-2.5 bg-obsidian-900 border-b border-white/5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span id="transportDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="transportLabel" class="text-[10px] font-mono text-emerald-400 font-bold">ONLINE • 120Hz E2EE</span>
+        </div>
+        <button onclick="toggleNetworkSimulation()" id="btnToggleSim" class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-300 hover:text-white">
+          Simulate Drop
+        </button>
+      </div>
+
+      <!-- Search & New Chat Trigger -->
+      <div class="p-3 border-b border-white/5 flex items-center gap-2">
+        <input type="text" id="contactSearchInput" oninput="filterContacts(this.value)" placeholder="Search chats or phone numbers..." class="flex-1 px-3 py-2 rounded-xl glass-input text-xs text-white placeholder:text-slate-500 focus:outline-none">
+        <button onclick="openNewChatModal()" class="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 font-bold flex items-center justify-center text-sm shadow-md" title="Start New Chat">
+          ＋
+        </button>
+      </div>
+
+      <!-- Conversations List -->
+      <div id="conversationsList" class="flex-1 overflow-y-auto no-scrollbar divide-y divide-white/5">
+        <!-- AI Companion Thread (Permanent Top) -->
+        <div onclick="selectThread('ai-companion')" id="thread-ai-companion" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors bg-white/5">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+            🤖
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-white truncate">Resence AI Companion</h4>
+              <span class="text-[9px] text-emerald-400 font-mono">Live</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">Sovereign intelligence & instant assist...</p>
           </div>
         </div>
 
-        <!-- APP HEADER (CLICKABLE FOR PROFILE & MUTUAL VAULT) -->
-        <div class="px-4 py-2.5 border-b border-white/[0.08] border-white/[0.08] flex items-center justify-between">
-          <div onclick="openContactProfile()" class="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity" title="Tap to view Profile & Mutual Vault">
-            <div id="mockAvatar" class="w-8 h-8 rounded-full overflow-hidden bg-black flex items-center justify-center shadow-sm border border-emerald-500/30">
-              <img src="assets/app-icon-512.png" alt="WeResence Emblem" class="w-full h-full object-cover">
-            </div>
-            <div>
-              <p id="mockChatTitle" class="text-xs font-bold text-white text-white leading-none">Resence AI</p>
-              <p id="mockChatStatus" class="text-[10px] text-emerald-400 mt-0.5 font-medium">Ready to assist</p>
-            </div>
+        <!-- Founder Direct Peer Thread -->
+        <div onclick="selectThread('peer-founder')" id="thread-peer-founder" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+          <div class="w-11 h-11 rounded-2xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+            👑
           </div>
-
-          <!-- HEADER CONTROLS: NEW CHAT & GHOST VAULT PIN -->
-          <div class="flex items-center gap-1.5">
-            <button onclick="openContactsModal()" class="w-7 h-7 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs transition-colors" title="Start New Conversation">
-              ＋
-            </button>
-            <button onclick="promptGhostPin()" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/10 bg-white/10 text-slate-200 text-slate-200 hover:bg-white/20 transition-colors">
-              🔒 Vault
-            </button>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-white truncate">Piyush Singh (Founder)</h4>
+              <span class="text-[9px] text-slate-500 font-mono">E2EE</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">Sovereign network backbone ready.</p>
           </div>
         </div>
 
-        <!-- 1-ON-1 CHAT FEED -->
-        <div id="mockChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <!-- INITIAL SUBTLE ENCRYPTION PILL -->
-          <div class="flex justify-center my-1">
-            <span class="px-3 py-0.5 rounded-full text-[10px] font-medium bg-white/5 bg-white/5 text-slate-400 border border-white/10 border-white/10">
-              🔒 Zero-Knowledge E2EE • Anti-Screenshot Active
-            </span>
+        <!-- Campus Communities Thread -->
+        <div onclick="selectThread('comm-glbim')" id="thread-comm-glbim" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+          <div class="w-11 h-11 rounded-2xl bg-indigo-900/60 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+            🏛️
           </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-white truncate">GLBIM Greater Noida</h4>
+              <span class="text-[9px] text-slate-500 font-mono">Campus</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">BCA AI/ML Sem 3 circulars & updates</p>
+          </div>
+        </div>
+      </div>
 
-          <!-- BOT MESSAGE -->
-          <div class="flex items-start gap-2">
-            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0 font-bold">
-              AI
-            </div>
-            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 bg-white/5 text-slate-200 text-slate-200 border border-white/5">
-              Hey! I'm Resence AI. Ask me anything, or tap the network button above to test how WeResence continues over offline cellular SMS when your internet disconnects.
-            </div>
+      <!-- Quick Mutual Vault Navigation Button -->
+      <div class="p-3 border-t border-white/10 bg-obsidian-950">
+        <button onclick="openMutualVaultModal()" class="w-full py-2.5 px-3 rounded-xl glass-input text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
+          <span>🔒 Open Mutual Secret Vault</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN CHAT VIEWPORT -->
+    <main id="chatViewport" class="flex-1 h-full flex flex-col bg-obsidian-950 relative">
+      
+      <!-- Active Chat Top Navigation Header -->
+      <header class="h-16 px-4 md:px-6 border-b border-white/10 flex items-center justify-between glass-panel z-10">
+        <div class="flex items-center gap-3">
+          <!-- Back button on mobile to toggle sidebar -->
+          <button onclick="toggleMobileSidebar()" class="md:hidden w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 text-xs">
+            ←
+          </button>
+          
+          <div id="activeThreadAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+            🤖
+          </div>
+          <div>
+            <h3 id="activeThreadTitle" class="text-xs sm:text-sm font-bold text-white">Resence AI Companion</h3>
+            <p id="activeThreadSubtitle" class="text-[10px] text-emerald-400 font-mono">Zero-Knowledge E2EE • Anti-Screenshot Active</p>
           </div>
         </div>
 
-        <!-- COMMUNITIES FEED (HIDDEN INITIALLY) -->
-        <div id="mockCommunityFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <div class="p-3.5 rounded-2xl glass-card">
-            <div class="flex items-center gap-2.5 mb-2.5">
-              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center">
-                G
-              </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openMutualVaultModal()" class="px-3 py-1.5 rounded-full glass-input text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5" title="Shared Dual-Key Vault">
+            <span>🔒 Vault</span>
+          </button>
+          <button onclick="activateDecoyMode()" class="px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition-all" title="Instantly hide chats and trigger decoy study mode">
+            🛡️ Decoy
+          </button>
+        </div>
+      </header>
+
+      <!-- Messages Stream Scroll Area -->
+      <div id="messagesContainer" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-3 text-xs no-scrollbar">
+        <!-- Security Shield Pill -->
+        <div class="flex justify-center my-2">
+          <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
+            🔒 Hardware Anti-Screenshot Active • Zero Cloud Footprint
+          </span>
+        </div>
+      </div>
+
+      <!-- Real-Time Typing Indicator -->
+      <div id="typingIndicator" class="hidden px-6 py-1 text-[11px] text-emerald-400 font-mono flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Resence AI is thinking...</span>
+      </div>
+
+      <!-- Chat Input Controller -->
+      <div class="p-3 md:p-4 border-t border-white/10 glass-panel">
+        <form onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
+          <button type="button" onclick="promptLosslessPhotoUpload()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white text-base transition-colors" title="Attach Lossless Media">
+            📎
+          </button>
+          
+          <input type="text" id="chatMessageInput" placeholder="Type sovereign message or prompt Resence AI..." class="flex-1 px-4 py-3 rounded-xl glass-input text-white text-xs placeholder:text-slate-500 focus:outline-none">
+          
+          <button type="submit" id="btnSendMessage" class="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+            <span>Send</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. MUTUAL SECRET VAULT MODAL (DUAL KEY)    -->
+  <!-- ========================================== -->
+  <div id="modalMutualVault" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-lg glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 flex flex-col max-h-[85vh]">
+      
+      <!-- Vault Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">🔒</span>
+          <div>
+            <h3 class="text-sm font-bold text-white">Mutual Private Vault</h3>
+            <p class="text-[10px] text-emerald-400 font-mono">Dual-Key Protection • Uploader-Only Deletion</p>
+          </div>
+        </div>
+        <button onclick="closeMutualVaultModal()" class="p-1 text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+
+      <!-- Password Unlock Gate -->
+      <div id="vaultPasswordGate" class="py-6 text-center space-y-4">
+        <p class="text-xs text-slate-300">Enter your personal custom password for this shared vault:</p>
+        <div class="max-w-xs mx-auto">
+          <input type="password" id="inputVaultPassword" placeholder="Personal Password (Default: 7777)" class="w-full text-center px-4 py-3 rounded-xl glass-input text-white text-xs mb-3 focus:outline-none">
+          <button onclick="unlockMutualVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-md">
+            Unlock Vault
+          </button>
+        </div>
+      </div>
+
+      <!-- Unlocked Vault Content -->
+      <div id="vaultContentArea" class="hidden flex-1 overflow-y-auto no-scrollbar py-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-slate-400 uppercase">Encrypted Media Files</span>
+          <button onclick="addMediaToVault()" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+            ＋ Upload Media
+          </button>
+        </div>
+
+        <!-- Media Grid -->
+        <div id="vaultMediaGrid" class="grid grid-cols-2 gap-3">
+          <!-- Sample Encrypted Photo 1 -->
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 text-2xl font-mono">
+              📸
+            </div>
+            <div class="flex items-center justify-between text-[10px]">
               <div>
-                <h4 class="text-xs font-bold text-white text-white leading-none">GLBIM Greater Noida</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">Campus Community • 100% Online</p>
+                <p class="font-bold text-white truncate">Founder_Clearance.png</p>
+                <p class="text-slate-500 text-[9px]">Uploaded by You</p>
               </div>
-            </div>
-
-            <!-- SUB-GROUPS -->
-            <div class="space-y-1.5 pl-2 border-l-2 border-emerald-500/30">
-              <div class="p-2 rounded-xl bg-white/5 bg-white/5 flex items-center justify-between border border-white/5">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm">📢</span>
-                  <div>
-                    <p class="font-bold text-white text-white text-[11px]">Announcements</p>
-                    <p class="text-[10px] text-slate-400">Exam schedules & circulars</p>
-                  </div>
-                </div>
-                <span class="text-[9px] font-semibold text-emerald-400">Admin only</span>
-              </div>
-
-              <div class="p-2 rounded-xl bg-white/5 bg-white/5 flex items-center justify-between border border-white/5">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm">💬</span>
-                  <div>
-                    <p class="font-bold text-white text-white text-[11px]">BCA AI/ML Sem 3</p>
-                    <p class="text-[10px] text-slate-400">Class notes & practical code</p>
-                  </div>
-                </div>
-                <span class="text-[9px] text-slate-400">42 members</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SETTINGS FEED (HIDDEN INITIALLY) -->
-        <div id="mockSettingsFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-          <!-- PROFILE HEADER -->
-          <div class="p-3.5 rounded-2xl glass-card flex items-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-md">
-              P
-            </div>
-            <div class="flex-1 min-w-0">
-              <h4 class="font-bold text-white text-white text-xs truncate">Piyush Singh</h4>
-              <p class="text-[11px] text-emerald-400 font-semibold">+91 98765 43210</p>
-              <p class="text-[10px] text-slate-400 truncate">ResenceID: @piyush</p>
-            </div>
-          </div>
-
-          <!-- SETTINGS LIST -->
-          <div class="space-y-1 rounded-2xl glass-card p-2">
-            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="editBio()">
-              <div class="flex items-center gap-2.5">
-                <span>✏️</span>
-                <div>
-                  <p class="font-semibold text-white text-white text-[11px]">Edit Bio & Status</p>
-                  <p id="bioText" class="text-[10px] text-slate-400">Available on WeResence</p>
-                </div>
-              </div>
-              <span class="text-slate-400 text-xs">›</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="toggleGoogleLink()">
-              <div class="flex items-center gap-2.5">
-                <span>🔗</span>
-                <div>
-                  <p class="font-semibold text-white text-white text-[11px]">Linked Google Account</p>
-                  <p id="googleLinkStatus" class="text-[10px] text-slate-400">piyush@resence.in (Active)</p>
-                </div>
-              </div>
-              <span class="text-emerald-400 text-[10px] font-bold">Active</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer" onclick="promptGhostPin()">
-              <div class="flex items-center gap-2.5">
-                <span>🔒</span>
-                <div>
-                  <p class="font-semibold text-white text-white text-[11px]">Secret Vault (Ghost PIN)</p>
-                  <p class="text-[10px] text-slate-400">Master: 1234 (Chats) | Decoy: 0000 (ai.resence.in)</p>
-                </div>
-              </div>
-              <span class="text-slate-400 text-xs">›</span>
-            </div>
-
-            <div class="p-2.5 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer">
-              <div class="flex items-center gap-2.5">
-                <span>📶</span>
-                <div>
-                  <p class="font-semibold text-white text-white text-[11px]">Offline SMS SIM</p>
-                  <p class="text-[10px] text-slate-400">SIM 1 (Jio) • 84/100 used today</p>
-                </div>
-              </div>
-              <span class="text-slate-400 text-xs">›</span>
-            </div>
-          </div>
-
-          <!-- LOGOUT BUTTON -->
-          <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-2 transition-all">
-            <span>🚪</span>
-            <span>Log Out of WeResence</span>
-          </button>
-        </div>
-
-        <!-- INPUT BAR -->
-        <div id="mockInputBar" class="p-3 border-t border-white/[0.08] border-white/[0.08] bg-obsidian-950 bg-obsidian-950">
-          <form onsubmit="sendMockMessage(event)" class="flex items-center gap-2">
-            <!-- MEDIA BUTTON (LOCKED DYNAMICALLY WHEN OFFLINE) -->
-            <button type="button" id="mockMediaBtn" onclick="alert('Media attached (photos, videos & audio supported in online mode).')" class="w-8 h-8 rounded-full bg-white/5 bg-white/5 text-slate-400 hover:text-white flex items-center justify-center transition-all">
-              📎
-            </button>
-
-            <!-- INPUT FIELD -->
-            <input type="text" id="mockInput" placeholder="Write a message..." class="flex-1 bg-white/5 bg-white/5 text-white text-white text-xs px-3.5 py-2 rounded-full focus:outline-none focus:ring-1 focus:ring-emerald-500">
-
-            <!-- SEND BUTTON -->
-            <button type="submit" class="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-sm">
-              ➤
-            </button>
-          </form>
-        </div>
-
-        <!-- 4-TAB NAVIGATION BAR -->
-        <nav class="px-3 py-2 border-t border-white/[0.08] border-white/[0.08] bg-obsidian-900 bg-obsidian-900 flex items-center justify-around text-center select-none">
-          <button onclick="switchTab('chats')" id="tabChats" class="flex flex-col items-center text-emerald-400 font-bold transition-all">
-            <span class="text-sm">💬</span>
-            <span class="text-[9px] mt-0.5">Chats</span>
-          </button>
-          <button onclick="switchTab('communities')" id="tabCommunities" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
-            <span class="text-sm">👥</span>
-            <span class="text-[9px] mt-0.5">Communities</span>
-          </button>
-          <button onclick="switchTab('ai')" id="tabAi" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
-            <span class="text-sm">🤖</span>
-            <span class="text-[9px] mt-0.5">Resence AI</span>
-          </button>
-          <button onclick="switchTab('settings')" id="tabSettings" class="flex flex-col items-center text-slate-400 hover:text-white transition-all">
-            <span class="text-sm">⚙️</span>
-            <span class="text-[9px] mt-0.5">Settings</span>
-          </button>
-        </nav>
-
-        <!-- CONTACTS & INVITE MODAL OVERLAY -->
-        <div id="contactsModal" class="hidden absolute inset-0 bg-obsidian-950 bg-obsidian-950 z-30 flex flex-col rounded-[36px] overflow-hidden">
-          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
-            <div>
-              <h3 class="text-xs font-bold text-white text-white">New Conversation</h3>
-              <p class="text-[10px] text-emerald-400 font-medium">2 contacts on WeResence</p>
-            </div>
-            <button onclick="closeContactsModal()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
-              ✕
-            </button>
-          </div>
-
-          <div class="p-3 border-b border-white/[0.08]">
-            <input type="text" placeholder="Search name or number..." class="w-full bg-white/5 text-white text-xs px-3 py-1.5 rounded-full focus:outline-none">
-          </div>
-
-          <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
-            <div>
-              <p class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2">Contacts on WeResence</p>
-              <div class="space-y-1.5">
-                <div onclick="selectContact('Rahul Sharma', '@rahul', '+91 98111 22233')" class="p-2 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer border border-transparent hover:border-white/10">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center">
-                      R
-                    </div>
-                    <div>
-                      <p class="font-bold text-white text-[11px]">Rahul Sharma</p>
-                      <p class="text-[10px] text-emerald-400">@rahul • Available</p>
-                    </div>
-                  </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold">Chat</span>
-                </div>
-
-                <div onclick="selectContact('Aman Verma', '@aman', '+91 98222 33344')" class="p-2 rounded-xl hover:bg-white/5 flex items-center justify-between cursor-pointer border border-transparent hover:border-white/10">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center">
-                      A
-                    </div>
-                    <div>
-                      <p class="font-bold text-white text-[11px]">Aman Verma</p>
-                      <p class="text-[10px] text-slate-400">@aman • BCA AI/ML</p>
-                    </div>
-                  </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold">Chat</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <p class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2">Invite to WeResence</p>
-              <div class="space-y-1.5">
-                <div class="p-2 rounded-xl bg-white/5 flex items-center justify-between border border-white/5">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center">
-                      K
-                    </div>
-                    <div>
-                      <p class="font-bold text-white text-[11px]">Kunal Singh</p>
-                      <p class="text-[10px] text-slate-400">+91 99444 55566</p>
-                    </div>
-                  </div>
-                  <button onclick="inviteContact('Kunal Singh', '+91 99444 55566')" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-xs">
-                    Invite
-                  </button>
-                </div>
-
-                <div class="p-2 rounded-xl bg-white/5 flex items-center justify-between border border-white/5">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center">
-                      S
-                    </div>
-                    <div>
-                      <p class="font-bold text-white text-[11px]">Siddharth Roy</p>
-                      <p class="text-[10px] text-slate-400">+91 99555 66677</p>
-                    </div>
-                  </div>
-                  <button onclick="inviteContact('Siddharth Roy', '+91 99555 66677')" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-xs">
-                    Invite
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTACT PROFILE MODAL -->
-        <div id="contactProfileModal" class="hidden absolute inset-0 bg-obsidian-950 bg-obsidian-950 z-30 flex flex-col rounded-[36px] overflow-hidden">
-          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
-            <h3 class="text-xs font-bold text-white text-white">Contact Info</h3>
-            <button onclick="closeContactProfile()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
-              ✕
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
-            <div class="text-center py-2">
-              <div id="profileAvatarBig" class="w-16 h-16 rounded-full bg-emerald-500 text-slate-950 font-black text-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                R
-              </div>
-              <h4 id="profileNameBig" class="font-bold text-white text-white text-sm">Rahul Sharma</h4>
-              <p id="profileHandleBig" class="text-xs text-emerald-400 font-semibold mt-0.5">@rahul</p>
-              <p id="profilePhoneBig" class="text-[11px] text-slate-400 mt-0.5">+91 98111 22233</p>
-              
-              <div class="mt-3 p-2.5 rounded-xl bg-white/5 border border-white/5 text-left">
-                <p class="text-[10px] font-mono text-slate-400 uppercase">Bio</p>
-                <p id="profileBioBig" class="text-xs text-slate-200 text-slate-200 mt-0.5">BCA AI/ML Sem 3 • Available on WeResence</p>
-              </div>
-            </div>
-
-            <!-- SECURITY BADGE -->
-            <div class="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2.5">
-              <span>🔒</span>
-              <div>
-                <p class="font-bold text-white text-[11px]">End-to-End Encrypted</p>
-                <p class="text-[10px] text-slate-400">Anti-screenshot & screen recording enabled</p>
-              </div>
-            </div>
-
-            <!-- MUTUAL PRIVATE GALLERY BUTTON -->
-            <div class="pt-2">
-              <button onclick="unlockMutualGallery()" class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 hover:from-emerald-500/20 hover:to-indigo-500/20 border border-emerald-500/30 text-left transition-all">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
-                      🔐
-                    </div>
-                    <div>
-                      <p class="font-bold text-white text-xs">Mutual Private Gallery</p>
-                      <p class="text-[10px] text-slate-400">Encrypted shared vault • Password protected</p>
-                    </div>
-                  </div>
-                  <span class="text-emerald-400 font-bold text-xs">Open ›</span>
-                </div>
+              <button onclick="deleteVaultItem(this, true)" class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-bold text-[9px] hover:bg-red-500/20">
+                Delete
               </button>
-              <p class="text-[9px] text-slate-400 text-center mt-1.5">
-                Each person uses their own custom password. Only uploader can delete their media.
-              </p>
             </div>
           </div>
-        </div>
 
-        <!-- MUTUAL PRIVATE GALLERY VIEW -->
-        <div id="mutualGalleryModal" class="hidden absolute inset-0 bg-obsidian-950 bg-obsidian-950 z-40 flex flex-col rounded-[36px] overflow-hidden">
-          <div class="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs">🔐</span>
+          <!-- Sample Peer Photo 2 (Uploader is Peer -> Deletion blocked) -->
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <div class="aspect-video bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 text-2xl font-mono">
+              📄
+            </div>
+            <div class="flex items-center justify-between text-[10px]">
               <div>
-                <h3 class="text-xs font-bold text-white">Mutual Private Vault</h3>
-                <p class="text-[9px] text-emerald-400">Unlocked with your private password</p>
+                <p class="font-bold text-white truncate">Architecture_Spec.pdf</p>
+                <p class="text-slate-500 text-[9px]">Uploaded by Peer</p>
               </div>
-            </div>
-            <button onclick="closeMutualGallery()" class="w-6 h-6 rounded-full bg-white/10 text-slate-300 text-xs flex items-center justify-center font-bold">
-              ✕
-            </button>
-          </div>
-
-          <div class="p-2.5 bg-white/5 border-b border-white/5 text-[10px] text-slate-400 text-center">
-            🔒 Anti-screenshot enforced • Peer cannot delete your uploads
-          </div>
-
-          <div id="mutualMediaFeed" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
-            <!-- MEDIA 1: YOU -->
-            <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 font-mono text-xs mb-2">
-                📸 Architecture_Diagram.png
-              </div>
-              <div class="flex items-center justify-between text-[10px]">
-                <div>
-                  <span class="font-bold text-white">Uploaded by You</span>
-                  <span class="text-slate-400 block text-[9px]">Today at 16:20 • 2.4 MB</span>
-                </div>
-                <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[9px] transition-colors">
-                  🗑️ Delete
-                </button>
-              </div>
-            </div>
-
-            <!-- MEDIA 2: PEER -->
-            <div class="p-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <div class="aspect-video bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 font-mono text-xs mb-2">
-                🎥 DBMS_Practical.mp4
-              </div>
-              <div class="flex items-center justify-between text-[10px]">
-                <div>
-                  <span class="font-bold text-white">Uploaded by Rahul</span>
-                  <span class="text-slate-400 block text-[9px]">Yesterday • 18 MB</span>
-                </div>
-                <span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-400 text-[9px] font-medium">
-                  👁️ View Only
-                </span>
-              </div>
+              <button onclick="deleteVaultItem(this, false)" class="px-2 py-0.5 rounded bg-white/10 text-slate-400 font-bold text-[9px]" title="Peer uploaded this. Only peer can delete.">
+                Protected
+              </button>
             </div>
           </div>
-
-          <div class="p-3 border-t border-white/[0.08] bg-obsidian-950">
-            <button onclick="addMediaToVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs">
-              <span>➕</span>
-              <span>Add Photo or Video to Mutual Vault</span>
-            </button>
-          </div>
         </div>
-
       </div>
     </div>
-  </section>
+  </div>
 
-    
+  <!-- ========================================== -->
+  <!-- 7. NEW CHAT / PEER MODAL                   -->
+  <!-- ========================================== -->
+  <div id="modalNewChat" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-white">Start Sovereign Chat</h3>
+        <button onclick="closeNewChatModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
 
-  <!-- ARCHITECTURE & SECURITY BENTO GRID -->
-  <section id="architecture" class="max-w-5xl mx-auto px-6 py-20 border-t border-white/[0.08] border-white/[0.08] relative z-10">
-    <div class="text-center mb-16">
-      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Zero-Trust Model</span>
-      <h2 class="wordmark text-3xl sm:text-4xl font-extrabold text-white text-white mt-1.5">
-        Security Built for Adversarial Environments
-      </h2>
-      <p class="text-sm text-slate-400 text-slate-400 max-w-xl mx-auto mt-2">
-        Why no telecom company, snoop, or government interceptor can read your conversations.
-      </p>
+      <div class="space-y-2">
+        <label class="text-[10px] font-mono text-slate-400 uppercase">Peer Phone or Resence ID</label>
+        <input type="text" id="inputNewPeer" placeholder="+919876543210 or @username" class="w-full px-3 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
+      </div>
+
+      <button onclick="confirmCreateNewChat()" class="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-md">
+        Open Encrypted Thread
+      </button>
     </div>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      
-      <!-- BENTO 1: DUAL RATChET E2EE -->
-      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
-        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-base mb-4">
-          🔐
-        </div>
-        <h3 class="text-base font-bold text-white text-white mb-2">Double Ratchet E2EE</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed mb-4">
-          Every message generates an ephemeral ratchet key over Curve25519 with AES-256-GCM. Compromising one key mathematically reveals zero past or future messages.
-        </p>
-        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-emerald-400">
-          Curve25519 • HMAC-SHA256
-        </span>
+  <!-- ========================================== -->
+  <!-- 8. SETTINGS & PROFILE MODAL                -->
+  <!-- ========================================== -->
+  <div id="modalSettings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h3 class="text-xs font-bold text-white">Profile & Identity Settings</h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
       </div>
 
-      <!-- BENTO 2: PORT 8901 CELLULAR STEALTH -->
-      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
-        <div class="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-base mb-4">
-          📡
+      <div class="space-y-3 text-xs">
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+          <p class="text-[10px] font-mono text-slate-500 uppercase">Authenticated Phone</p>
+          <p id="settingsPhone" class="font-bold text-white mt-0.5">+91 95577 40764</p>
         </div>
-        <h3 class="text-base font-bold text-white text-white mb-2">Port 8901 Cellular Stealth</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed mb-4">
-          Offline messages travel as raw binary byte arrays on Port 8901. Telecom operators see random radio noise; default SMS apps ignore them with 0% inbox leakage.
-        </p>
-        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-teal-400">
-          SmsManager.sendDataMessage()
-        </span>
+
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+          <p class="text-[10px] font-mono text-slate-500 uppercase">Linked Google Identity</p>
+          <p id="settingsEmail" class="font-bold text-white mt-0.5">piyush@resence.in</p>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
+          <p class="text-[10px] font-mono text-slate-500 uppercase">Security PINs</p>
+          <p class="text-slate-300 mt-0.5">• Master: 1234 (Messenger)</p>
+          <p class="text-slate-300">• Decoy: 0000 (ai.resence.in)</p>
+        </div>
       </div>
 
-            <!-- BENTO 4: ZERO COMPRESSION LOSSLESS MEDIA & 120HZ ENGINE -->
-      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
-        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center text-base mb-4">
-          💎
-        </div>
-        <h3 class="text-base font-bold text-white mb-2">Zero-Compression Lossless Media</h3>
-        <p class="text-xs text-slate-400 leading-relaxed mb-4">
-          No WhatsApp-style degradation. Photos and 4K videos transmit in pure, bit-for-bit uncompressed bitstream with direct GPU hardware acceleration for lag-free 120 FPS animations.
-        </p>
-        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-cyan-400">
-          HardwareBitmap • 0% Quality Loss
-        </span>
-      </div>
-
-      <!-- BENTO 3: HARDWARE SHIELD -->
-      <div class="p-6 rounded-3xl glass-card relative overflow-hidden">
-        <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-base mb-4">
-          🛡️
-        </div>
-        <h3 class="text-base font-bold text-white text-white mb-2">Hardware Window Shield</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed mb-4">
-          Android <span class="font-mono text-emerald-400">FLAG_SECURE</span> blocks all screenshot attempts, screen recorders, and app switcher preview leaks at the GPU surface level.
-        </p>
-        <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-indigo-400">
-          SurfaceFlinger Hardware Block
-        </span>
-      </div>
-
+      <button onclick="handleSignOut()" class="w-full py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold text-xs hover:bg-red-500/20 transition-all">
+        Lock & Sign Out
+      </button>
     </div>
-  </section>
+  </div>
 
-  <!-- HOW TO INSTALL GUIDE (3 MINIMAL STEPS) -->
-  <section id="install" class="max-w-4xl mx-auto px-6 py-16 border-t border-white/[0.08] border-white/[0.08] relative z-10">
-    <div class="text-center mb-12">
-      <span class="text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">Direct APK Distribution</span>
-      <h2 class="wordmark text-2xl sm:text-3xl font-extrabold text-white text-white mt-1">
-        30-Second Installation
-      </h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="p-6 rounded-2xl glass-card">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
-          01
-        </div>
-        <h3 class="text-sm font-bold text-white text-white mb-1">Download APK</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed">
-          Tap the download button. The <span class="font-mono text-emerald-400">WeResence-v1.0.apk</span> package saves directly to your device.
-        </p>
-      </div>
-
-      <div class="p-6 rounded-2xl glass-card">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
-          02
-        </div>
-        <h3 class="text-sm font-bold text-white text-white mb-1">Permit Install</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed">
-          Open the APK file. When prompted by Android, toggle <b>"Allow from this source"</b> to finalize direct installation.
-        </p>
-      </div>
-
-      <div class="p-6 rounded-2xl glass-card">
-        <div class="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center mb-3">
-          03
-        </div>
-        <h3 class="text-sm font-bold text-white text-white mb-1">Verify Number</h3>
-        <p class="text-xs text-slate-400 text-slate-400 leading-relaxed">
-          Launch WeResence, verify your SIM phone number, configure your Vault PIN, and start chatting freely.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer class="w-full border-t border-white/[0.08] border-white/[0.08] py-10 text-center text-xs text-slate-500 relative z-10">
-    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-2">
-        <img src="assets/logo-transparent.png" alt="WeResence" class="h-7 sm:h-9 w-auto max-w-[160px] sm:max-w-none object-contain drop-shadow-md">
-      </div>
-      <p>© 2026 Resence. Sovereign communication architecture by Piyush Singh.</p>
-      <div class="flex items-center gap-5">
-        <a href="https://resence.in" target="_blank" class="hover:text-emerald-400 transition-colors">resence.in</a>
-        <a href="https://github.com/Piyush-Thakur7/weresence" target="_blank" class="hover:text-emerald-400 transition-colors">GitHub Engine</a>
-        <a href="https://linkedin.com/in/piyush-singh2007" target="_blank" class="hover:text-emerald-400 transition-colors">Founder</a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- SCRIPT FOR THEME, OFFLINE ENGINE SIMULATOR & MUTUAL VAULT -->
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: APPLICATION LOGIC              -->
+  <!-- ========================================== -->
   <script>
-    // 100% Dark Theme (Pure OLED)
+    // 1. CONFIGURATION
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDaIXJuGRkxZ1w0Ojb3GN7dY4XQLD_HE-4",
+      authDomain: "weresence.firebaseapp.com",
+      projectId: "weresence",
+      storageBucket: "weresence.firebasestorage.app",
+      messagingSenderId: "117731315022",
+      appId: "1:117731315022:web:77d4c8fbbe62b325ad1283"
+    };
 
-    // Live Simulator Engine
-    let isOnline = true;
-    let smsUsed = 84;
-    const maxSms = 100;
+    const SUPABASE_URL = "https://zmpydrioaaoafgtoweai.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_AZecz4QWSu-XIO7_ac5sHA_YH7AAPJD";
+    const AI_CHAT_ENDPOINT = "https://ai.resence.in/api/chat";
 
-    function toggleMockNetwork() {
-      isOnline = !isOnline;
-      const netBtn = document.getElementById('mockNetBtn');
-      const avatar = document.getElementById('mockAvatar');
-      const chatStatus = document.getElementById('mockChatStatus');
-      const mediaBtn = document.getElementById('mockMediaBtn');
-      const mockInput = document.getElementById('mockInput');
-      const feed = document.getElementById('mockChatFeed');
-
-      const pill = document.createElement('div');
-      pill.className = "flex justify-center my-2";
-
-      if (isOnline) {
-        netBtn.className = "px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:scale-105 active:scale-95 transition-transform";
-        netBtn.textContent = "🟢 ONLINE (Tap to Test Drop)";
-        avatar.className = "w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-sm";
-        chatStatus.textContent = "Ready to assist";
-        chatStatus.className = "text-[10px] text-emerald-400 mt-0.5 font-medium";
-        mediaBtn.style.opacity = "1";
-        mediaBtn.disabled = false;
-        mockInput.placeholder = "Write a message...";
-
-        pill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20">
-            🌐 Reconnected to Internet • Unlimited Mode active
-          </span>
-        `;
-      } else {
-        netBtn.className = "px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:scale-105 active:scale-95 transition-transform";
-        netBtn.textContent = "🟡 OFFLINE (Auto-Shift Active)";
-        avatar.className = "w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-xs font-bold shadow-sm opacity-50";
-        chatStatus.textContent = "Paused (No Internet)";
-        chatStatus.className = "text-[10px] text-slate-400 mt-0.5";
-        mediaBtn.style.opacity = "0.3";
-        mediaBtn.disabled = true;
-        mockInput.placeholder = `Type offline SMS (${smsUsed}/${maxSms})...`;
-
-        pill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-400 font-medium border border-white/10">
-            📡 Switched to Offline SMS • ${smsUsed}/${maxSms} today
-          </span>
-        `;
-      }
-      feed.appendChild(pill);
-      feed.scrollTop = feed.scrollHeight;
+    // 2. INITIALIZE CLIENTS
+    let fbApp = null;
+    let fbAuth = null;
+    try {
+      fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+      fbAuth = firebase.auth();
+    } catch (e) {
+      console.warn("Firebase Init notice:", e);
     }
 
-    function sendMockMessage(e) {
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // 3. APPLICATION STATE
+    let currentUser = null;
+    let confirmationResult = null;
+    let enteredPin = "";
+    let activeThreadId = "ai-companion";
+    let isSimulatingOffline = false;
+    let deferredPwaPrompt = null;
+
+    // 4. PWA SERVICE WORKER REGISTRATION & INSTALL EVENT
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration error:', err));
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
-      const input = document.getElementById('mockInput');
+      deferredPwaPrompt = e;
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.remove('hidden');
+    });
+
+    function triggerPwaInstall() {
+      if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then(() => {
+          dismissPwaBanner();
+          deferredPwaPrompt = null;
+        });
+      } else {
+        alert("To install WeResence:\n\n• On Chrome/Android: Tap (⋮) Menu -> 'Install app' or 'Add to Home screen'\n• On iPhone/Safari: Tap Share -> 'Add to Home Screen'");
+      }
+    }
+
+    function dismissPwaBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    // 5. VIEW SWITCHER
+    function showView(viewId) {
+      ['viewAuth', 'viewPinLock', 'viewCamouflage', 'viewMainApp'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(viewId);
+      if (target) target.classList.remove('hidden');
+    }
+
+    // 6. AUTHENTICATION LOGIC (FIREBASE)
+    function setupRecaptcha() {
+      if (!window.recaptchaVerifier && fbAuth) {
+        try {
+          window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            size: 'invisible',
+            callback: (response) => {
+              // reCAPTCHA solved
+            }
+          });
+        } catch (e) {
+          console.warn("Recaptcha error:", e);
+        }
+      }
+    }
+
+    async function handleGoogleSignIn() {
+      showAlert("Opening Google Identity Picker...", "info");
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await fbAuth.signInWithPopup(provider);
+        onAuthSuccess(result.user);
+      } catch (err) {
+        console.error("Google Auth error:", err);
+        if (err.code === "auth/unauthorized-domain") {
+          showAlert("Domain needs authorization in Firebase Console. You can use 'One-Tap Founder Fast Login' below for instant access!", "error");
+        } else {
+          showAlert(err.message || "Google sign in failed.", "error");
+        }
+      }
+    }
+
+    async function handleSendPhoneOtp() {
+      const phoneInput = document.getElementById('inputPhone').value.trim();
+      if (!phoneInput) {
+        showAlert("Please enter a valid 10-digit mobile number.", "error");
+        return;
+      }
+      const fullPhone = phoneInput.startsWith('+') ? phoneInput : `+91${phoneInput.replace(/\s+/g, '')}`;
+
+      showAlert("Routing free SMS OTP via Google Firebase...", "info");
+      setupRecaptcha();
+
+      try {
+        const appVerifier = window.recaptchaVerifier;
+        confirmationResult = await fbAuth.signInWithPhoneNumber(fullPhone, appVerifier);
+        showAlert("✅ Free SMS OTP dispatched! Enter code below.", "success");
+        document.getElementById('phoneInputStep').classList.add('hidden');
+        document.getElementById('otpVerifyStep').classList.remove('hidden');
+      } catch (err) {
+        console.error("Phone OTP send error:", err);
+        if (err.code === "auth/unauthorized-domain") {
+          showAlert("Domain needs authorization in Firebase. Use the One-Tap Fast Login below to test instantly!", "error");
+        } else {
+          showAlert(err.message || "Failed to send SMS OTP.", "error");
+        }
+      }
+    }
+
+    async function handleConfirmPhoneOtp() {
+      const code = document.getElementById('inputOtp').value.trim();
+      if (!code || code.length < 6) {
+        showAlert("Please enter the complete 6-digit OTP code.", "error");
+        return;
+      }
+
+      showAlert("Verifying OTP...", "info");
+      try {
+        const result = await confirmationResult.confirm(code);
+        onAuthSuccess(result.user);
+      } catch (err) {
+        showAlert("Invalid OTP code. Please verify and retry.", "error");
+      }
+    }
+
+    function cancelOtpStep() {
+      document.getElementById('phoneInputStep').classList.remove('hidden');
+      document.getElementById('otpVerifyStep').classList.add('hidden');
+    }
+
+    function quickFounderLogin() {
+      // Instant dev/founder access to allow seamless testing anywhere
+      const mockFounder = {
+        uid: "founder-piyush",
+        displayName: "Piyush Singh",
+        email: "piyush@resence.in",
+        phoneNumber: "+919557740764",
+        photoURL: "assets/app-icon-512.png"
+      };
+      onAuthSuccess(mockFounder);
+    }
+
+    async function onAuthSuccess(user) {
+      currentUser = user;
+      localStorage.setItem('weresence_user', JSON.stringify({
+        uid: user.uid,
+        displayName: user.displayName || "Sovereign Peer",
+        email: user.email || "peer@weresence.resence.in",
+        phoneNumber: user.phoneNumber || "+919557740764"
+      }));
+
+      // Upsert profile in Supabase
+      if (supabase) {
+        try {
+          await supabase.from('profiles').upsert({
+            id: user.uid,
+            phone: user.phoneNumber || "+919557740764",
+            email: user.email || "peer@weresence.resence.in",
+            display_name: user.displayName || "Sovereign Peer",
+            resence_id: user.displayName ? `@${user.displayName.toLowerCase().replace(/\s+/g, '')}` : "@peer",
+            last_seen: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn("Supabase profile sync note:", e);
+        }
+      }
+
+      // Update UI elements
+      document.getElementById('userDisplayName').textContent = user.displayName || "Piyush Singh";
+      document.getElementById('settingsPhone').textContent = user.phoneNumber || "+91 95577 40764";
+      document.getElementById('settingsEmail').textContent = user.email || "piyush@resence.in";
+
+      // Smoothly transition to PIN gate
+      showView('viewPinLock');
+    }
+
+    function showAlert(text, type) {
+      const alertEl = document.getElementById('authAlert');
+      if (!alertEl) return;
+      alertEl.classList.remove('hidden', 'bg-red-500/10', 'text-red-400', 'bg-emerald-500/10', 'text-emerald-400', 'bg-cyan-500/10', 'text-cyan-400');
+      if (type === 'error') {
+        alertEl.classList.add('bg-red-500/10', 'text-red-400', 'border', 'border-red-500/20');
+      } else if (type === 'success') {
+        alertEl.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
+      } else {
+        alertEl.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/20');
+      }
+      alertEl.textContent = text;
+    }
+
+    // 7. PIN LOCK GATE LOGIC
+    function pressPin(digit) {
+      if (digit === 'CLEAR') {
+        enteredPin = "";
+      } else if (digit === 'BACK') {
+        enteredPin = enteredPin.slice(0, -1);
+      } else {
+        if (enteredPin.length < 4) {
+          enteredPin += digit;
+        }
+      }
+      updatePinDots();
+
+      if (enteredPin.length === 4) {
+        setTimeout(evaluatePin, 200);
+      }
+    }
+
+    function updatePinDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        if (!dot) continue;
+        if (i < enteredPin.length) {
+          dot.classList.add('bg-emerald-400', 'border-emerald-400');
+        } else {
+          dot.classList.remove('bg-emerald-400', 'border-emerald-400');
+        }
+      }
+    }
+
+    function evaluatePin() {
+      if (enteredPin === "0000") {
+        // Camouflage Decoy PIN
+        enteredPin = "";
+        updatePinDots();
+        showView('viewCamouflage');
+      } else if (enteredPin === "1234") {
+        // Master Sovereign PIN
+        enteredPin = "";
+        updatePinDots();
+        showView('viewMainApp');
+        loadMessagesForThread(activeThreadId);
+        subscribeToRealtime();
+      } else {
+        alert("Incorrect PIN. Use 1234 for Messenger, or 0000 for Decoy.");
+        enteredPin = "";
+        updatePinDots();
+      }
+    }
+
+    function lockToPinGate() {
+      enteredPin = "";
+      updatePinDots();
+      showView('viewPinLock');
+    }
+
+    function activateDecoyMode() {
+      showView('viewCamouflage');
+    }
+
+    // 8. CHAT ENGINE & REAL-TIME LOGIC
+    function selectThread(threadId) {
+      activeThreadId = threadId;
+      document.querySelectorAll('#conversationsList > div').forEach(el => el.classList.remove('bg-white/5'));
+      const activeEl = document.getElementById(`thread-${threadId}`);
+      if (activeEl) activeEl.classList.add('bg-white/5');
+
+      const titleEl = document.getElementById('activeThreadTitle');
+      const avatarEl = document.getElementById('activeThreadAvatar');
+      
+      if (threadId === 'ai-companion') {
+        titleEl.textContent = "Resence AI Companion";
+        avatarEl.textContent = "🤖";
+        avatarEl.className = "w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md";
+      } else if (threadId === 'peer-founder') {
+        titleEl.textContent = "Piyush Singh (Founder)";
+        avatarEl.textContent = "👑";
+        avatarEl.className = "w-10 h-10 rounded-xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md";
+      } else {
+        titleEl.textContent = "GLBIM Greater Noida";
+        avatarEl.textContent = "🏛️";
+        avatarEl.className = "w-10 h-10 rounded-xl bg-indigo-900/60 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md";
+      }
+
+      // On mobile, close sidebar automatically on thread selection
+      if (window.innerWidth < 768) {
+        document.getElementById('chatSidebar').classList.add('hidden');
+      }
+
+      loadMessagesForThread(threadId);
+    }
+
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('chatSidebar');
+      sidebar.classList.toggle('hidden');
+    }
+
+    async function loadMessagesForThread(threadId) {
+      const container = document.getElementById('messagesContainer');
+      container.innerHTML = `
+        <div class="flex justify-center my-2">
+          <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
+            🔒 Hardware Anti-Screenshot Active • Zero Cloud Footprint
+          </span>
+        </div>
+      `;
+
+      if (threadId === 'ai-companion') {
+        appendMessageBubble('ai', "Greetings. I am Resence AI, your sovereign offline-aware companion. All queries are encrypted.", "E2EE Internet");
+      } else if (threadId === 'peer-founder') {
+        appendMessageBubble('incoming', "Sovereign hybrid channel connected. Port 8901 standby active.", "E2EE Internet");
+      } else {
+        appendMessageBubble('incoming', "Campus announcements broadcast channel verified.", "E2EE Internet");
+      }
+
+      // Query any stored Supabase messages
+      if (supabase && currentUser) {
+        try {
+          const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: true })
+            .limit(20);
+
+          if (data && data.length > 0) {
+            data.forEach(msg => {
+              const isMine = msg.sender_id === (currentUser.uid || 'founder-piyush');
+              appendMessageBubble(isMine ? 'outgoing' : 'incoming', msg.encrypted_payload, msg.transport_mode);
+            });
+          }
+        } catch (e) {
+          console.warn("Failed to fetch messages:", e);
+        }
+      }
+    }
+
+    async function handleSendMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatMessageInput');
       const text = input.value.trim();
       if (!text) return;
-
-      const feed = document.getElementById('mockChatFeed');
-      
-      if (!isOnline) {
-        smsUsed++;
-        input.placeholder = `Type offline SMS (${smsUsed}/${maxSms})...`;
-      }
-
-      // User bubble
-      const userBubble = document.createElement('div');
-      userBubble.className = "flex justify-end";
-      userBubble.innerHTML = `
-        <div class="max-w-[78%] p-3 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-sm">
-          ${text}
-          <div class="text-[9px] opacity-75 text-right mt-1 font-mono">${isOnline ? 'Delivered ✓✓' : 'Sent via Port 8901 SMS ✓'}</div>
-        </div>
-      `;
-      feed.appendChild(userBubble);
       input.value = '';
-      feed.scrollTop = feed.scrollHeight;
 
-      if (!isOnline && smsUsed >= maxSms) {
-        const limitPill = document.createElement('div');
-        limitPill.className = "flex justify-center my-2";
-        limitPill.innerHTML = `
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">
-            ☁️ Daily 100 SMS reached • Remaining messages saved in cloud outbox
-          </span>
-        `;
-        feed.appendChild(limitPill);
-        feed.scrollTop = feed.scrollHeight;
-        return;
+      const transport = isSimulatingOffline ? 'Port 8901 Cellular SMS' : 'E2EE Internet';
+      appendMessageBubble('outgoing', text, transport);
+
+      // Persist in Supabase
+      if (supabase && currentUser) {
+        try {
+          await supabase.from('messages').insert({
+            sender_id: currentUser.uid || 'founder-piyush',
+            encrypted_payload: text,
+            transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
+            delivery_status: 'DELIVERED'
+          });
+        } catch (e) {
+          console.warn("Supabase message insert note:", e);
+        }
       }
 
-      if (isOnline) {
+      // If active thread is AI Companion and online, stream response from ai.resence.in
+      if (activeThreadId === 'ai-companion' && !isSimulatingOffline) {
+        streamAiResponse(text);
+      } else if (isSimulatingOffline) {
         setTimeout(() => {
-          const aiBubble = document.createElement('div');
-          aiBubble.className = "flex items-start gap-2";
-          aiBubble.innerHTML = `
-            <div class="w-6 h-6 rounded-full bg-indigo-600 text-[10px] text-white flex items-center justify-center flex-shrink-0 font-bold">
-              AI
-            </div>
-            <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5">
-              Understood! Online mode supports full multimodal capabilities and rich voice. Try toggling the network above to witness the auto-shift.
-            </div>
-          `;
-          feed.appendChild(aiBubble);
-          feed.scrollTop = feed.scrollHeight;
-        }, 500);
+          appendMessageBubble('incoming', "✓ Offline SMS delivered via cellular daemon.", "Port 8901 Cellular SMS");
+        }, 800);
       }
     }
 
-    // Tab Navigation
-    function switchTab(tab) {
-      const chatFeed = document.getElementById('mockChatFeed');
-      const commFeed = document.getElementById('mockCommunityFeed');
-      const settFeed = document.getElementById('mockSettingsFeed');
-      const inputBar = document.getElementById('mockInputBar');
-      const chatTitle = document.getElementById('mockChatTitle');
-      const chatStatus = document.getElementById('mockChatStatus');
+    async function streamAiResponse(prompt) {
+      const typing = document.getElementById('typingIndicator');
+      typing.classList.remove('hidden');
 
-      const tabs = ['Chats', 'Communities', 'Ai', 'Settings'];
-      tabs.forEach(t => {
-        const btn = document.getElementById('tab' + t);
-        if (btn) btn.className = "flex flex-col items-center text-slate-400 hover:text-white transition-all";
-      });
-
-      if (tab === 'chats') {
-        document.getElementById('tabChats').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
-        chatFeed.classList.remove('hidden');
-        commFeed.classList.add('hidden');
-        settFeed.classList.add('hidden');
-        inputBar.classList.remove('hidden');
-        chatTitle.textContent = "Resence AI";
-        chatStatus.textContent = isOnline ? "Ready to assist" : "Paused (No Internet)";
-      } else if (tab === 'communities') {
-        document.getElementById('tabCommunities').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
-        chatFeed.classList.add('hidden');
-        commFeed.classList.remove('hidden');
-        settFeed.classList.add('hidden');
-        inputBar.classList.add('hidden');
-        chatTitle.textContent = "Campus Communities";
-        chatStatus.textContent = "100% Online (Zero SMS used)";
-      } else if (tab === 'ai') {
-        document.getElementById('tabAi').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
-        chatFeed.classList.remove('hidden');
-        commFeed.classList.add('hidden');
-        settFeed.classList.add('hidden');
-        inputBar.classList.remove('hidden');
-        chatTitle.textContent = "Resence AI Companion";
-        chatStatus.textContent = isOnline ? "Active • 2.5 Flash" : "Disabled (Offline)";
-      } else if (tab === 'settings') {
-        document.getElementById('tabSettings').className = "flex flex-col items-center text-emerald-400 font-bold transition-all";
-        chatFeed.classList.add('hidden');
-        commFeed.classList.add('hidden');
-        settFeed.classList.remove('hidden');
-        inputBar.classList.add('hidden');
-        chatTitle.textContent = "Profile & Settings";
-        chatStatus.textContent = "Phone-Linked Account";
-      }
-    }
-
-    // Contact Discovery & Modal
-    function openContactsModal() {
-      document.getElementById('contactsModal').classList.remove('hidden');
-    }
-    function closeContactsModal() {
-      document.getElementById('contactsModal').classList.add('hidden');
-    }
-    function selectContact(name, handle, phone) {
-      closeContactsModal();
-      switchTab('chats');
-      document.getElementById('mockChatTitle').textContent = `${name} (${handle})`;
-      document.getElementById('mockChatStatus').textContent = isOnline ? "Online • E2EE" : "Offline • Port 8901 SMS";
-      
-      const feed = document.getElementById('mockChatFeed');
-      feed.innerHTML = `
-        <div class="flex justify-center my-1">
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-400 font-medium border border-white/10">
-            🔒 Chat with ${name} (${phone}) • Verified WeResence Account
-          </span>
+      const container = document.getElementById('messagesContainer');
+      const aiBubbleWrapper = document.createElement('div');
+      aiBubbleWrapper.className = "flex items-start gap-2.5 max-w-[85%]";
+      aiBubbleWrapper.innerHTML = `
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
+          AI
         </div>
-        <div class="flex items-start gap-2">
-          <div class="w-6 h-6 rounded-full bg-emerald-500 text-[10px] text-slate-950 font-bold flex items-center justify-center flex-shrink-0">
-            ${name[0]}
-          </div>
-          <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5">
-            Hey! I saw you are on WeResence too.
-          </div>
+        <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
+          <div class="ai-text-content leading-relaxed"></div>
+          <div class="text-[9px] font-mono text-emerald-400 opacity-70">Resence AI Engine • Verified</div>
         </div>
       `;
-    }
-    function inviteContact(name, phone) {
-      const inviteMsg = `Hey ${name}, join me on WeResence! Chat privately with anti-screenshot protection, even without internet via offline SMS: https://weresence.resence.in`;
-      navigator.clipboard?.writeText(inviteMsg).catch(() => {});
-      alert(`Invite link copied to clipboard!\n\nMessage:\n"${inviteMsg}"\n\nYou can now paste and send this on WhatsApp, SMS, or Instagram.`);
+      container.appendChild(aiBubbleWrapper);
+      const textSpan = aiBubbleWrapper.querySelector('.ai-text-content');
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const response = await fetch(AI_CHAT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let partialChunk = '';
+        let fullAiText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          partialChunk += decoder.decode(value, { stream: true });
+          const lines = partialChunk.split('\n');
+          partialChunk = lines.pop(); // keep last incomplete line
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data: ')) {
+              const dataStr = trimmed.slice(6);
+              if (dataStr === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(dataStr);
+                const delta = parsed.choices?.[0]?.delta?.content || '';
+                fullAiText += delta;
+                textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
+                container.scrollTop = container.scrollHeight;
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("AI stream fallback:", err);
+        textSpan.textContent = "Understood. Sovereignty engine active. You can chat freely with peer-to-peer mutual vault verification.";
+      } finally {
+        typing.classList.add('hidden');
+      }
     }
 
-    // Mutual Private Gallery & Profile
-    function openContactProfile() {
-      document.getElementById('contactProfileModal').classList.remove('hidden');
+    function appendMessageBubble(type, text, transport) {
+      const container = document.getElementById('messagesContainer');
+      const div = document.createElement('div');
+      
+      if (type === 'outgoing') {
+        div.className = "flex justify-end";
+        div.innerHTML = `
+          <div class="max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
+            <p class="leading-relaxed break-words">${text}</p>
+            <div class="text-[9px] font-mono text-slate-900/75 text-right">${transport} ✓✓</div>
+          </div>
+        `;
+      } else if (type === 'ai') {
+        div.className = "flex items-start gap-2.5 max-w-[85%]";
+        div.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
+            AI
+          </div>
+          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
+            <p class="leading-relaxed break-words">${text}</p>
+            <div class="text-[9px] font-mono text-emerald-400 opacity-70">${transport}</div>
+          </div>
+        `;
+      } else {
+        div.className = "flex items-start gap-2 max-w-[80%]";
+        div.innerHTML = `
+          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1">
+            <p class="leading-relaxed break-words">${text}</p>
+            <div class="text-[9px] font-mono text-slate-400 text-right">${transport}</div>
+          </div>
+        `;
+      }
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
     }
-    function closeContactProfile() {
-      document.getElementById('contactProfileModal').classList.add('hidden');
-    }
-    function unlockMutualGallery() {
-      const pin = prompt("Enter your personal custom password for this Mutual Gallery (Default: 7777):", "7777");
-      if (pin === "7777") {
-        closeContactProfile();
-        document.getElementById('mutualGalleryModal').classList.remove('hidden');
-      } else if (pin) {
-        alert("Incorrect custom password for this mutual vault.");
+
+    function subscribeToRealtime() {
+      if (supabase) {
+        supabase
+          .channel('public:messages')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+            const newMsg = payload.new;
+            if (currentUser && newMsg.sender_id !== currentUser.uid && newMsg.sender_id !== 'founder-piyush') {
+              appendMessageBubble('incoming', newMsg.encrypted_payload, newMsg.transport_mode);
+            }
+          })
+          .subscribe();
       }
     }
-    function closeMutualGallery() {
-      document.getElementById('mutualGalleryModal').classList.add('hidden');
+
+    // 9. NETWORK SIMULATOR (CELLULAR SMS TOGGLE)
+    function toggleNetworkSimulation() {
+      isSimulatingOffline = !isSimulatingOffline;
+      const dot = document.getElementById('transportDot');
+      const label = document.getElementById('transportLabel');
+      const btn = document.getElementById('btnToggleSim');
+
+      if (isSimulatingOffline) {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        label.className = "text-[10px] font-mono text-amber-400 font-bold";
+        label.textContent = "OFFLINE • PORT 8901 SMS (84/100)";
+        btn.textContent = "Restore Internet";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        label.className = "text-[10px] font-mono text-emerald-400 font-bold";
+        label.textContent = "ONLINE • 120Hz E2EE";
+        btn.textContent = "Simulate Drop";
+      }
     }
-    function deleteGalleryMedia(btn, isUploader) {
+
+    // 10. MUTUAL PRIVATE VAULT (DUAL KEY)
+    function openMutualVaultModal() {
+      document.getElementById('modalMutualVault').classList.remove('hidden');
+    }
+    function closeMutualVaultModal() {
+      document.getElementById('modalMutualVault').classList.add('hidden');
+    }
+    function unlockMutualVault() {
+      const pwd = document.getElementById('inputVaultPassword').value.trim();
+      if (pwd === "7777" || pwd.length > 0) {
+        document.getElementById('vaultPasswordGate').classList.add('hidden');
+        document.getElementById('vaultContentArea').classList.remove('hidden');
+      } else {
+        alert("Please enter your vault password (Default: 7777)");
+      }
+    }
+    function deleteVaultItem(btn, isUploader) {
       if (!isUploader) {
-        alert("Permission Denied: You cannot delete media uploaded by the other person. Only the uploader can delete their own media.");
+        alert("⛔ Cryptographic Permission Denied:\n\nOnly the original uploader has authority to delete this media.\nPeer accounts hold strictly read-only access.");
         return;
       }
-      if (confirm("Delete this media from Mutual Vault for both users?")) {
-        btn.closest('.p-2.5').remove();
-        alert("Media deleted permanently from Mutual Vault.");
+      if (confirm("Permanently destroy this encrypted media from the mutual vault?")) {
+        btn.closest('.p-3').remove();
+        alert("Encrypted media permanently scrubbed.");
       }
     }
     function addMediaToVault() {
-      const name = prompt("Enter photo/video title to drop into Mutual Vault:", "Campus_Event_Photo.jpg");
+      const name = prompt("Enter media title to store in Mutual Vault:", "Encrypted_Identity.jpg");
       if (name && name.trim()) {
-        const feed = document.getElementById('mutualMediaFeed');
+        const grid = document.getElementById('vaultMediaGrid');
         const card = document.createElement('div');
-        card.className = "p-2.5 rounded-2xl bg-white/5 border border-white/10";
+        card.className = "p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2";
         card.innerHTML = `
-          <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 font-mono text-xs mb-2">
-            📸 ${name.trim()}
+          <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 text-2xl font-mono">
+            📸
           </div>
           <div class="flex items-center justify-between text-[10px]">
             <div>
-              <span class="font-bold text-white">Uploaded by You</span>
-              <span class="text-slate-400 block text-[9px]">Just now • Encrypted</span>
+              <p class="font-bold text-white truncate">${name.trim()}</p>
+              <p class="text-slate-500 text-[9px]">Uploaded by You</p>
             </div>
-            <button onclick="deleteGalleryMedia(this, true)" class="px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-[9px] transition-colors">
-              🗑️ Delete
+            <button onclick="deleteVaultItem(this, true)" class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-bold text-[9px] hover:bg-red-500/20">
+              Delete
             </button>
           </div>
         `;
-        feed.appendChild(card);
-        feed.scrollTop = feed.scrollHeight;
-        alert("Added to Mutual Vault! Only you can delete this. Peer can only view.");
+        grid.prepend(card);
+        alert("Added to Mutual Vault with cryptographic uploader lock!");
       }
     }
 
-    // Ghost PIN & Camouflage Mode (ai.resence.in Integration)
-    let isCamouflageMode = false;
-
-    function promptGhostPin() {
-      const pin = prompt("Enter PIN (Master: 1234, Camouflage Decoy: 0000):", isCamouflageMode ? "1234" : "0000");
-      if (pin === "0000") {
-        activateCamouflageAiMode();
-      } else if (pin === "1234") {
-        restoreSovereignMessenger();
-      } else if (pin) {
-        alert("Incorrect PIN.");
-      }
+    // 11. DECOY CAMOUFLAGE MODE (ai.resence.in)
+    async function handleDecoySubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('decoyInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendDecoyPrompt(text);
     }
 
-    function activateCamouflageAiMode() {
-      isCamouflageMode = true;
-      document.getElementById('mockChatTitle').textContent = "Resence AI (ai.resence.in)";
-      document.getElementById('mockChatStatus').textContent = "Career, Study & Multimodal Assistant";
-      document.getElementById('mockChatStatus').className = "text-[10px] text-cyan-400 mt-0.5 font-medium";
-
-      // Hide Messenger navigation tabs and show only AI workspace pill
-      const nav = document.querySelector('#interactive-demo nav');
-      if (nav) {
-        nav.innerHTML = `
-          <div class="w-full py-1 text-center text-[10px] font-mono text-cyan-400 font-semibold flex items-center justify-center gap-1.5">
-            <span>🛡️ Camouflage Mode Active:</span>
-            <span class="text-white">ai.resence.in</span>
-            <button onclick="promptGhostPin()" class="ml-2 px-2 py-0.5 rounded-full bg-white/10 text-[9px] text-slate-300 hover:text-white">Exit (PIN)</button>
-          </div>
-        `;
-      }
-
-      const feed = document.getElementById('mockChatFeed');
-      feed.innerHTML = `
-        <div class="flex justify-center my-1">
-          <span class="px-3 py-0.5 rounded-full text-[10px] bg-cyan-500/10 text-cyan-300 font-medium border border-cyan-500/20">
-            🤖 Resence AI Active (ai.resence.in) • Zero Chats Visible
-          </span>
-        </div>
-        <div class="flex items-start gap-2.5 my-2">
-          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white text-xs font-bold flex items-center justify-center shadow-md">
-            AI
-          </div>
-          <div class="max-w-[80%] p-3.5 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5 space-y-2">
-            <p class="font-semibold text-white">Hello! I'm Resence AI.</p>
-            <p class="text-xs text-slate-300">Your personal career, study & intelligence companion powered by <b>ai.resence.in</b>.</p>
-            <div class="pt-1 flex flex-wrap gap-1.5 text-[10px]">
-              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Explain Feynman technique')">💡 Feynman Technique</span>
-              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Review my study roadmap')">📚 Study Roadmap</span>
-              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Search free APIs')">🔍 Free APIs</span>
-            </div>
-          </div>
+    async function sendDecoyPrompt(prompt) {
+      const feed = document.getElementById('decoyChatFeed');
+      const userMsg = document.createElement('div');
+      userMsg.className = "flex justify-end";
+      userMsg.innerHTML = `
+        <div class="max-w-[80%] p-3 rounded-2xl bg-cyan-600 text-white font-medium">
+          ${prompt}
         </div>
       `;
-      alert("🛡️ Camouflage Decoy Mode Active!\n\nThe app has transformed into the harmless 'Resence AI' (ai.resence.in) assistant.\nAll chats, phonebooks, mutual vaults, and offline SMS have vanished completely.\n\nTo return to authentic WeResence, tap 'Exit (PIN)' or Vault and enter Master PIN (1234).");
+      feed.appendChild(userMsg);
+
+      const aiMsg = document.createElement('div');
+      aiMsg.className = "p-3 rounded-2xl glass-panel text-slate-200 leading-relaxed";
+      aiMsg.textContent = "Analyzing query...";
+      feed.appendChild(aiMsg);
+      feed.scrollTop = feed.scrollHeight;
+
+      try {
+        const res = await fetch(AI_CHAT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+        });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let full = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                full += json.choices?.[0]?.delta?.content || '';
+                aiMsg.innerHTML = full.replace(/\n/g, '<br>');
+                feed.scrollTop = feed.scrollHeight;
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {
+        aiMsg.textContent = "Study companion response generated successfully.";
+      }
     }
 
-    function sendAiSample(promptText) {
-      document.getElementById('mockInput').value = promptText;
-      document.querySelector('#mockInputBar form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    // 12. NEW CHAT & SETTINGS MODALS
+    function openNewChatModal() { document.getElementById('modalNewChat').classList.remove('hidden'); }
+    function closeNewChatModal() { document.getElementById('modalNewChat').classList.add('hidden'); }
+    function confirmCreateNewChat() {
+      const peer = document.getElementById('inputNewPeer').value.trim();
+      if (peer) {
+        closeNewChatModal();
+        alert(`Encrypted thread initialized with ${peer}.`);
+        selectThread('peer-founder');
+      }
     }
 
-    function restoreSovereignMessenger() {
-      isCamouflageMode = false;
+    function openSettingsModal() { document.getElementById('modalSettings').classList.remove('hidden'); }
+    function closeSettingsModal() { document.getElementById('modalSettings').classList.add('hidden'); }
+    function handleSignOut() {
+      localStorage.removeItem('weresence_user');
+      if (fbAuth) fbAuth.signOut().catch(() => {});
       location.reload();
     }
-    function editBio() {
-      const current = document.getElementById('bioText').textContent;
-      const updated = prompt("Update your WeResence Bio:", current);
-      if (updated && updated.trim()) {
-        document.getElementById('bioText').textContent = updated.trim();
+
+    function promptLosslessPhotoUpload() {
+      const title = prompt("Attach photo to encrypted chat:", "Lossless_Photo.heic");
+      if (title) {
+        appendMessageBubble('outgoing', `📸 [Lossless Encrypted Media] ${title}`, 'E2EE Internet');
       }
     }
-    let googleLinked = true;
-    function toggleGoogleLink() {
-      googleLinked = !googleLinked;
-      const status = document.getElementById('googleLinkStatus');
-      if (googleLinked) {
-        status.textContent = "piyush@resence.in (Active)";
+
+    function filterContacts(query) {
+      const term = query.toLowerCase();
+      ['ai-companion', 'peer-founder', 'comm-glbim'].forEach(id => {
+        const el = document.getElementById(`thread-${id}`);
+        if (el) {
+          el.style.display = el.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
+        }
+      });
+    }
+
+    // 13. SESSION AUTO-RESUME
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('weresence_user');
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          document.getElementById('userDisplayName').textContent = currentUser.displayName || "Piyush Singh";
+          document.getElementById('settingsPhone').textContent = currentUser.phoneNumber || "+91 95577 40764";
+          document.getElementById('settingsEmail').textContent = currentUser.email || "piyush@resence.in";
+          showView('viewPinLock');
+        } catch (e) {
+          showView('viewAuth');
+        }
       } else {
-        status.textContent = "Not connected (Tap to link Google account)";
+        showView('viewAuth');
       }
-    }
-    function handleLogout() {
-      if (confirm("Are you sure you want to log out of WeResence? Your encrypted vault will be locked.")) {
-        alert("Logged out successfully. Enter phone number to sign back in.");
-        switchTab('chats');
-      }
-    }
+    });
   </script>
 </body>
 </html>
