@@ -306,41 +306,30 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. DECOY WORKSPACE (ai.resence.in)         -->
+  <!-- 3. DECOY WORKSPACE (NATIVE ai.resence.in)  -->
   <!-- ========================================== -->
-  <div id="viewCamouflage" class="hidden h-full w-full flex flex-col bg-obsidian-950 z-20">
-    <header class="h-14 px-4 border-b border-white/10 flex items-center justify-between glass-panel">
+  <div id="viewCamouflage" class="hidden h-full w-full flex flex-col bg-[#020617] z-20">
+    <header class="h-12 px-4 border-b border-white/10 flex items-center justify-between glass-panel z-10 flex-shrink-0">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs">
           AI
         </div>
         <div>
-          <h3 class="text-xs font-bold text-white">Resence AI Companion</h3>
-          <p class="text-[10px] text-cyan-400">ai.resence.in • Study & Career Workspace</p>
+          <h3 class="text-xs font-bold text-white">Resence AI Hub</h3>
+          <p class="text-[9px] text-cyan-400 font-mono">ai.resence.in • Multi-Model Intelligence</p>
         </div>
       </div>
-      <button onclick="lockToPinGate()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 text-slate-300 hover:text-white transition-all">
-        Lock (PIN)
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="reloadDecoyAiFrame()" class="w-7 h-7 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs" title="Refresh">
+          🔄
+        </button>
+        <button onclick="lockToPinGate()" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-slate-300 hover:text-white transition-all">
+          🔒 Lock (PIN)
+        </button>
+      </div>
     </header>
 
-    <div id="decoyChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs max-w-3xl mx-auto w-full">
-      <div class="p-4 rounded-2xl glass-panel space-y-2">
-        <h4 class="font-bold text-white text-sm">Resence AI Workspace Active</h4>
-        <p class="text-slate-400">Ask any technical, academic, or research questions.</p>
-        <div class="flex flex-wrap gap-2 pt-2">
-          <button onclick="sendDecoyPrompt('Explain quantum computing principles')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px]">💡 Quantum Computing</button>
-          <button onclick="sendDecoyPrompt('Give me a full-stack system architecture roadmap')" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px]">📚 System Architecture</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="p-3 border-t border-white/10 glass-panel">
-      <form onsubmit="handleDecoySubmit(event)" class="max-w-3xl mx-auto flex gap-2">
-        <input type="text" id="decoyInput" placeholder="Ask Resence AI anything..." class="flex-1 px-4 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
-        <button type="submit" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs">Send</button>
-      </form>
-    </div>
+    <iframe id="decoyAiFrame" src="https://ai.resence.in" class="flex-1 w-full h-full border-0 bg-[#020617]" allow="camera; microphone; clipboard-write; clipboard-read" title="Resence AI"></iframe>
   </div>
 
   <!-- ========================================== -->
@@ -472,69 +461,94 @@
         </div>
       </header>
 
-      <div id="messagesContainer" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-3 text-xs no-scrollbar">
-        <div class="flex justify-center my-2">
-          <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
-            🔒 Private Encrypted Channel
-          </span>
-        </div>
-      </div>
-
-      <div id="typingIndicator" class="hidden px-6 py-1 text-[11px] text-emerald-400 font-mono flex items-center gap-2">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>Resence AI is thinking...</span>
-      </div>
-
-      <div class="p-3 md:p-4 border-t border-white/10 glass-panel relative">
-        <!-- Attachment Menu Popover -->
-        <div id="attachMenuPopover" class="hidden absolute bottom-16 left-4 bg-obsidian-900/95 border border-white/10 rounded-2xl p-2 shadow-2xl space-y-1 z-30 w-48 backdrop-blur-xl">
-          <button type="button" onclick="openFilePicker('image/*,video/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
-            <span>🖼️</span> <span>Photos & Videos</span>
-          </button>
-          <button type="button" onclick="openFilePicker('application/pdf,.doc,.docx,.txt,.zip')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
-            <span>📄</span> <span>Document / PDF</span>
-          </button>
-          <button type="button" onclick="openFilePicker('audio/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
-            <span>🎵</span> <span>Audio File</span>
-          </button>
-        </div>
-
-        <!-- Hidden Chat File Input -->
-        <input type="file" id="chatFileInput" class="hidden" onchange="handleChatFileSelected(event)">
-
-        <!-- Live Voice Recording Bar -->
-        <div id="voiceRecordingBar" class="hidden flex items-center justify-between gap-3 max-w-4xl mx-auto p-2 bg-rose-500/10 border border-rose-500/30 rounded-2xl">
-          <div class="flex items-center gap-3 px-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-            <span class="text-xs font-mono font-bold text-rose-400">Recording</span>
-            <span id="voiceRecordingTimer" class="text-xs font-mono text-white font-bold">0:00</span>
-          </div>
+      <!-- 1. NATIVE RESENCE AI WORKSPACE (DIRECT EMBED FROM ai.resence.in) -->
+      <div id="aiNativeContainer" class="hidden flex-1 w-full h-full flex flex-col relative bg-[#020617] overflow-hidden">
+        <div class="px-3 sm:px-4 py-2 border-b border-white/10 bg-obsidian-900/90 flex items-center justify-between z-10 flex-shrink-0">
           <div class="flex items-center gap-2">
-            <button type="button" onclick="cancelVoiceRecording()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-semibold transition-all">
-              ✕ Cancel
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span class="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Official Resence AI Hub</span>
+          </div>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <button onclick="toggleAiMessengerMode()" id="btnToggleAiView" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 text-[10px] font-bold transition-all">
+              💬 Quick Chat
             </button>
-            <button type="button" onclick="stopAndSendVoiceRecording()" class="px-4 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95">
-              <span>Send Voice Note</span> <span>➤</span>
+            <a href="https://ai.resence.in" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 text-[10px] font-bold transition-all flex items-center gap-1">
+              <span>ai.resence.in</span> <span>↗</span>
+            </a>
+            <button onclick="reloadNativeAiFrame()" class="w-6 h-6 rounded-lg glass-input flex items-center justify-center text-slate-300 hover:text-white text-[10px]" title="Refresh Resence AI">
+              🔄
             </button>
           </div>
         </div>
+        <iframe id="nativeResenceAiFrame" src="https://ai.resence.in" class="flex-1 w-full h-full border-0 bg-[#020617]" allow="camera; microphone; clipboard-write; clipboard-read" title="Official Resence AI"></iframe>
+      </div>
 
-        <!-- Standard Chat Input Form -->
-        <form id="chatInputForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
-          <button type="button" onclick="toggleAttachMenu()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white text-base transition-colors" title="Attach Media">
-            📎
-          </button>
-          
-          <input type="text" id="chatMessageInput" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-xl glass-input text-white text-xs placeholder:text-slate-500 focus:outline-none">
-          
-          <button type="button" id="btnVoiceRecord" onclick="startVoiceRecording()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-rose-400 text-base transition-colors" title="Record Voice Note">
-            🎙️
-          </button>
+      <!-- 2. STANDARD MESSENGER CONTAINER (1-ON-1, CAMPUS & QUICK CHAT) -->
+      <div id="standardChatContainer" class="flex-1 flex flex-col h-full overflow-hidden">
+        <div id="messagesContainer" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-3 text-xs no-scrollbar">
+          <div class="flex justify-center my-2">
+            <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
+              🔒 Private Encrypted Channel
+            </span>
+          </div>
+        </div>
 
-          <button type="submit" id="btnSendMessage" class="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5">
-            <span>Send</span>
-          </button>
-        </form>
+        <div id="typingIndicator" class="hidden px-6 py-1 text-[11px] text-emerald-400 font-mono flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Resence AI is thinking...</span>
+        </div>
+
+        <div class="p-3 md:p-4 border-t border-white/10 glass-panel relative">
+          <!-- Attachment Menu Popover -->
+          <div id="attachMenuPopover" class="hidden absolute bottom-16 left-4 bg-obsidian-900/95 border border-white/10 rounded-2xl p-2 shadow-2xl space-y-1 z-30 w-48 backdrop-blur-xl">
+            <button type="button" onclick="openFilePicker('image/*,video/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+              <span>🖼️</span> <span>Photos & Videos</span>
+            </button>
+            <button type="button" onclick="openFilePicker('application/pdf,.doc,.docx,.txt,.zip')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+              <span>📄</span> <span>Document / PDF</span>
+            </button>
+            <button type="button" onclick="openFilePicker('audio/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+              <span>🎵</span> <span>Audio File</span>
+            </button>
+          </div>
+
+          <!-- Hidden Chat File Input -->
+          <input type="file" id="chatFileInput" class="hidden" onchange="handleChatFileSelected(event)">
+
+          <!-- Live Voice Recording Bar -->
+          <div id="voiceRecordingBar" class="hidden flex items-center justify-between gap-3 max-w-4xl mx-auto p-2 bg-rose-500/10 border border-rose-500/30 rounded-2xl">
+            <div class="flex items-center gap-3 px-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+              <span class="text-xs font-mono font-bold text-rose-400">Recording</span>
+              <span id="voiceRecordingTimer" class="text-xs font-mono text-white font-bold">0:00</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="cancelVoiceRecording()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-semibold transition-all">
+                ✕ Cancel
+              </button>
+              <button type="button" onclick="stopAndSendVoiceRecording()" class="px-4 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+                <span>Send Voice Note</span> <span>➤</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Standard Chat Input Form -->
+          <form id="chatInputForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
+            <button type="button" onclick="toggleAttachMenu()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white text-base transition-colors" title="Attach Media">
+              📎
+            </button>
+            
+            <input type="text" id="chatMessageInput" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-xl glass-input text-white text-xs placeholder:text-slate-500 focus:outline-none">
+            
+            <button type="button" id="btnVoiceRecord" onclick="startVoiceRecording()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-rose-400 text-base transition-colors" title="Record Voice Note">
+              🎙️
+            </button>
+
+            <button type="submit" id="btnSendMessage" class="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+              <span>Send</span>
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   </div>
@@ -1390,6 +1404,8 @@
       });
     }
 
+    let aiMessengerMode = false;
+
     function selectThread(threadId) {
       activeThreadId = threadId;
       document.querySelectorAll('#conversationsList > div').forEach(el => el.classList.remove('bg-white/5'));
@@ -1419,12 +1435,56 @@
         }
       }
 
+      const aiContainer = document.getElementById('aiNativeContainer');
+      const standardContainer = document.getElementById('standardChatContainer');
+
+      if (threadId === 'ai-companion') {
+        if (!aiMessengerMode) {
+          if (aiContainer) aiContainer.classList.remove('hidden');
+          if (standardContainer) standardContainer.classList.add('hidden');
+        } else {
+          if (aiContainer) aiContainer.classList.add('hidden');
+          if (standardContainer) standardContainer.classList.remove('hidden');
+          loadMessagesForThread(threadId);
+        }
+      } else {
+        if (aiContainer) aiContainer.classList.add('hidden');
+        if (standardContainer) standardContainer.classList.remove('hidden');
+        loadMessagesForThread(threadId);
+      }
+
       if (window.innerWidth < 768) {
         const sidebar = document.getElementById('chatSidebar');
         if (sidebar) sidebar.classList.add('hidden');
       }
+    }
 
-      loadMessagesForThread(threadId);
+    function toggleAiMessengerMode() {
+      aiMessengerMode = !aiMessengerMode;
+      const aiContainer = document.getElementById('aiNativeContainer');
+      const standardContainer = document.getElementById('standardChatContainer');
+      const btn = document.getElementById('btnToggleAiView');
+
+      if (!aiMessengerMode) {
+        if (aiContainer) aiContainer.classList.remove('hidden');
+        if (standardContainer) standardContainer.classList.add('hidden');
+        if (btn) btn.textContent = "💬 Quick Chat";
+      } else {
+        if (aiContainer) aiContainer.classList.add('hidden');
+        if (standardContainer) standardContainer.classList.remove('hidden');
+        if (btn) btn.textContent = "🌐 Native Resence AI";
+        loadMessagesForThread('ai-companion');
+      }
+    }
+
+    function reloadNativeAiFrame() {
+      const frame = document.getElementById('nativeResenceAiFrame');
+      if (frame) frame.src = "https://ai.resence.in";
+    }
+
+    function reloadDecoyAiFrame() {
+      const frame = document.getElementById('decoyAiFrame');
+      if (frame) frame.src = "https://ai.resence.in";
     }
 
     function toggleMobileSidebar() {
@@ -2116,59 +2176,9 @@
     }
 
     // ========================================================
-    // 14. DECOY CAMOUFLAGE LOGIC
+    // 14. DECOY CAMOUFLAGE (NATIVE ai.resence.in)
     // ========================================================
-    async function handleDecoySubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById('decoyInput');
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      sendDecoyPrompt(text);
-    }
-
-    async function sendDecoyPrompt(prompt) {
-      const feed = document.getElementById('decoyChatFeed');
-      const userMsg = document.createElement('div');
-      userMsg.className = "flex justify-end";
-      userMsg.innerHTML = `<div class="max-w-[80%] p-3 rounded-2xl bg-cyan-600 text-white font-medium">${prompt}</div>`;
-      feed.appendChild(userMsg);
-
-      const aiMsg = document.createElement('div');
-      aiMsg.className = "p-3 rounded-2xl glass-panel text-slate-200 leading-relaxed";
-      aiMsg.textContent = "Analyzing query...";
-      feed.appendChild(aiMsg);
-      feed.scrollTop = feed.scrollHeight;
-
-      try {
-        const res = await fetch(AI_CHAT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-        });
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let full = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
-              try {
-                const json = JSON.parse(line.slice(6));
-                full += json.choices?.[0]?.delta?.content || '';
-                aiMsg.innerHTML = full.replace(/\n/g, '<br>');
-                feed.scrollTop = feed.scrollHeight;
-              } catch (e) {}
-            }
-          }
-        }
-      } catch (e) {
-        aiMsg.textContent = "Study companion response completed.";
-      }
-    }
+    // Full native Resence AI is loaded in decoy iframe with zero telemetry footprint
 
     // ========================================================
     // 15. PROFILE EDITOR & ACCOUNT MANAGEMENT
