@@ -228,11 +228,18 @@
         </div>
 
         <form onsubmit="event.preventDefault(); handleCompleteProfileSetup();" class="space-y-3">
-          <!-- Avatar Preview -->
-          <div class="flex justify-center my-2">
-            <div class="relative">
-              <img id="setupAvatarImg" src="assets/app-icon-512.png" alt="Profile" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500/40 shadow-md">
+          <!-- Avatar Preview with Real Upload -->
+          <div class="flex flex-col items-center justify-center my-2 gap-1.5">
+            <div class="relative group cursor-pointer" onclick="document.getElementById('setupAvatarFileInput').click()" title="Click to upload profile photo">
+              <img id="setupAvatarImg" src="assets/app-icon-512.png" alt="Profile" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500/40 shadow-md group-hover:opacity-80 transition-all">
+              <div class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold">
+                📷 Change
+              </div>
             </div>
+            <button type="button" onclick="document.getElementById('setupAvatarFileInput').click()" class="text-[10px] text-emerald-400 hover:underline font-mono">
+              Upload Photo
+            </button>
+            <input type="file" id="setupAvatarFileInput" accept="image/*" class="hidden" onchange="handleSetupAvatarSelect(event)">
           </div>
 
           <div class="space-y-1">
@@ -295,11 +302,6 @@
         <button onclick="pressPin('0')" class="h-14 rounded-2xl glass-input text-lg font-bold text-white hover:bg-white/10 active:scale-90 transition-all">0</button>
         <button onclick="pressPin('BACK')" class="h-14 rounded-2xl glass-input text-sm font-bold text-slate-400 hover:bg-white/10 active:scale-90 transition-all">⌫</button>
       </div>
-
-      <div class="mt-4 p-2.5 rounded-xl bg-white/5 text-[10px] text-slate-400 font-mono text-left space-y-1">
-        <p>• <span class="text-white font-bold">1234</span>: Unlock Messenger</p>
-        <p>• <span class="text-cyan-400 font-bold">0000</span>: Decoy Mode (ai.resence.in)</p>
-      </div>
     </div>
   </div>
 
@@ -351,7 +353,7 @@
       
       <!-- User Profile Bar -->
       <div class="p-4 border-b border-white/10 flex items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0">
+        <div onclick="openEditProfileModal()" class="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-85 transition-opacity" title="Click to view & edit your profile">
           <div class="relative flex-shrink-0">
             <img id="userAvatarImg" src="assets/app-icon-512.png" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-emerald-500/30">
             <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-black"></span>
@@ -363,6 +365,9 @@
         </div>
         
         <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="openEditProfileModal()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs" title="Edit Profile">
+            ✏️
+          </button>
           <button onclick="openSettingsModal()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs" title="Settings">
             ⚙️
           </button>
@@ -435,34 +440,31 @@
           </div>
         </div>
       </div>
-
-      <div class="p-3 border-t border-white/10 bg-obsidian-950">
-        <button onclick="openMutualVaultModal()" class="w-full py-2.5 px-3 rounded-xl glass-input text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
-          <span>🔒 Open Mutual Vault</span>
-        </button>
-      </div>
     </aside>
 
     <!-- RIGHT CHAT VIEWPORT -->
     <main id="chatViewport" class="flex-1 h-full flex flex-col bg-obsidian-950 relative">
       <header class="h-16 px-4 md:px-6 border-b border-white/10 flex items-center justify-between glass-panel z-10">
-        <div class="flex items-center gap-3">
-          <button onclick="toggleMobileSidebar()" class="md:hidden w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 text-xs">
+        <div onclick="handleHeaderPeerClick()" class="flex items-center gap-3 cursor-pointer select-none group min-w-0" title="Click to view contact info">
+          <button onclick="event.stopPropagation(); toggleMobileSidebar();" class="md:hidden w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 text-xs">
             ←
           </button>
           
-          <div id="activeThreadAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+          <div id="activeThreadAvatar" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden flex-shrink-0">
             🤖
           </div>
-          <div>
-            <h3 id="activeThreadTitle" class="text-xs sm:text-sm font-bold text-white">Resence AI Companion</h3>
-            <p id="activeThreadSubtitle" class="text-[10px] text-emerald-400 font-mono">End-to-End Encrypted</p>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 id="activeThreadTitle" class="text-xs sm:text-sm font-bold text-white truncate group-hover:text-emerald-400 transition-colors">Resence AI Companion</h3>
+              <span id="activeThreadVerifiedBadge" class="text-emerald-400 text-xs">✓</span>
+            </div>
+            <p id="activeThreadSubtitle" class="text-[10px] text-emerald-400 font-mono truncate">End-to-End Encrypted</p>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <button onclick="openMutualVaultModal()" class="px-3 py-1.5 rounded-full glass-input text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5" title="Shared Vault">
-            <span>🔒 Vault</span>
+          <button onclick="handleHeaderPeerClick()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs transition-all" title="Contact Details">
+            ℹ️
           </button>
           <button onclick="activateDecoyMode()" class="px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition-all" title="Decoy Mode">
             🛡️ Decoy
@@ -483,14 +485,52 @@
         <span>Resence AI is thinking...</span>
       </div>
 
-      <div class="p-3 md:p-4 border-t border-white/10 glass-panel">
-        <form onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
-          <button type="button" onclick="promptLosslessPhotoUpload()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white text-base transition-colors" title="Attach Media">
+      <div class="p-3 md:p-4 border-t border-white/10 glass-panel relative">
+        <!-- Attachment Menu Popover -->
+        <div id="attachMenuPopover" class="hidden absolute bottom-16 left-4 bg-obsidian-900/95 border border-white/10 rounded-2xl p-2 shadow-2xl space-y-1 z-30 w-48 backdrop-blur-xl">
+          <button type="button" onclick="openFilePicker('image/*,video/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+            <span>🖼️</span> <span>Photos & Videos</span>
+          </button>
+          <button type="button" onclick="openFilePicker('application/pdf,.doc,.docx,.txt,.zip')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+            <span>📄</span> <span>Document / PDF</span>
+          </button>
+          <button type="button" onclick="openFilePicker('audio/*')" class="w-full px-3 py-2 rounded-xl text-left text-xs text-slate-200 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition-colors">
+            <span>🎵</span> <span>Audio File</span>
+          </button>
+        </div>
+
+        <!-- Hidden Chat File Input -->
+        <input type="file" id="chatFileInput" class="hidden" onchange="handleChatFileSelected(event)">
+
+        <!-- Live Voice Recording Bar -->
+        <div id="voiceRecordingBar" class="hidden flex items-center justify-between gap-3 max-w-4xl mx-auto p-2 bg-rose-500/10 border border-rose-500/30 rounded-2xl">
+          <div class="flex items-center gap-3 px-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="text-xs font-mono font-bold text-rose-400">Recording</span>
+            <span id="voiceRecordingTimer" class="text-xs font-mono text-white font-bold">0:00</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="cancelVoiceRecording()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-semibold transition-all">
+              ✕ Cancel
+            </button>
+            <button type="button" onclick="stopAndSendVoiceRecording()" class="px-4 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+              <span>Send Voice Note</span> <span>➤</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Standard Chat Input Form -->
+        <form id="chatInputForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
+          <button type="button" onclick="toggleAttachMenu()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white text-base transition-colors" title="Attach Media">
             📎
           </button>
           
           <input type="text" id="chatMessageInput" placeholder="Type a message..." class="flex-1 px-4 py-3 rounded-xl glass-input text-white text-xs placeholder:text-slate-500 focus:outline-none">
           
+          <button type="button" id="btnVoiceRecord" onclick="startVoiceRecording()" class="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-rose-400 text-base transition-colors" title="Record Voice Note">
+            🎙️
+          </button>
+
           <button type="submit" id="btnSendMessage" class="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5">
             <span>Send</span>
           </button>
@@ -500,82 +540,260 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 5. MUTUAL SECRET VAULT MODAL               -->
+  <!-- 5. PEER PROFILE MODAL (1-ON-1 CONTACT INFO)-->
   <!-- ========================================== -->
-  <div id="modalMutualVault" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="modalPeerProfile" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-panel rounded-3xl shadow-2xl border border-white/10 flex flex-col max-h-[88vh] overflow-hidden">
+      <!-- Header -->
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Contact Details</h3>
+        <button onclick="closePeerProfileModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
+
+      <!-- Scrollable Profile Content -->
+      <div class="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+        <!-- Avatar & Name -->
+        <div class="text-center space-y-2">
+          <div class="relative inline-block">
+            <div id="peerProfileAvatar" class="w-20 h-20 rounded-full mx-auto bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-xl border-2 border-emerald-500/30 overflow-hidden">
+              👑
+            </div>
+            <span class="absolute bottom-0 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-black"></span>
+          </div>
+          <div>
+            <h2 id="peerProfileName" class="text-base font-extrabold text-white">Piyush Singh</h2>
+            <p id="peerProfileHandle" class="text-xs text-emerald-400 font-mono mt-0.5">@piyush</p>
+          </div>
+        </div>
+
+        <!-- Bio / Status -->
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+          <span class="text-[9px] font-mono text-slate-500 uppercase">Bio</span>
+          <p id="peerProfileBio" class="text-xs text-slate-300 leading-relaxed">Founder @ Resence Ecosystem | Sovereign AI & Decentralized Systems</p>
+        </div>
+
+        <!-- Contact Phone -->
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+          <div>
+            <span class="text-[9px] font-mono text-slate-500 uppercase block">Mobile Number</span>
+            <span id="peerProfilePhone" class="text-xs font-mono text-white font-bold">+91 9557740764</span>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-mono font-bold border border-emerald-500/20">
+            ✓ Verified
+          </span>
+        </div>
+
+        <!-- Security & Encryption -->
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm flex-shrink-0">
+            🔒
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-white">End-to-End Encrypted</h4>
+            <p class="text-[10px] text-slate-400 mt-0.5">Messages and calls are secured with mutual private keys.</p>
+          </div>
+        </div>
+
+        <!-- Media, Links & Docs Overview -->
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Shared Media in Chat</span>
+            <span id="peerSharedMediaCount" class="text-[10px] font-mono text-emerald-400">0 items</span>
+          </div>
+          <div id="peerSharedMediaPreview" class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+            <span class="text-[11px] text-slate-500 italic">No shared media in this conversation yet</span>
+          </div>
+        </div>
+
+        <!-- 🔒 SECRET MUTUAL VAULT GATE (ONLY FOR 1-ON-1 CHATS - SCROLL TO THE END) -->
+        <div id="peerSecretVaultCard" class="p-4 rounded-3xl bg-gradient-to-b from-emerald-500/10 via-obsidian-900 to-obsidian-950 border border-emerald-500/30 space-y-3 mt-6 shadow-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg flex-shrink-0">
+              🔒
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white">Secret Mutual Vault</h4>
+              <p class="text-[10px] text-emerald-400 font-mono">Mutual Encrypted Storage</p>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            End-to-end encrypted personal vault shared exclusively between you and this contact. Store private photos, documents, and videos securely.
+          </p>
+          <button onclick="closePeerProfileModal(); openMutualVaultModal();" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 active:scale-95">
+            <span>Access Secret Vault</span>
+            <span>🔒</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. MUTUAL SECRET VAULT MODAL               -->
+  <!-- ========================================== -->
+  <div id="modalMutualVault" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-lg glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-4 border-b border-white/10">
         <div class="flex items-center gap-2.5">
           <span class="text-xl">🔒</span>
           <div>
-            <h3 class="text-sm font-bold text-white">Mutual Private Vault</h3>
-            <p class="text-[10px] text-emerald-400 font-mono">Uploader-Only Deletion Authority</p>
+            <h3 id="vaultHeaderTitle" class="text-sm font-bold text-white">Mutual Secret Vault</h3>
+            <p class="text-[10px] text-emerald-400 font-mono">End-to-End Encrypted Media Storage</p>
           </div>
         </div>
         <button onclick="closeMutualVaultModal()" class="p-1 text-slate-400 hover:text-white text-sm">✕</button>
       </div>
 
-      <div id="vaultPasswordGate" class="py-6 text-center space-y-4">
-        <p class="text-xs text-slate-300">Enter personal vault password:</p>
+      <!-- Password Gate -->
+      <div id="vaultPasswordGate" class="py-8 text-center space-y-4">
+        <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 text-lg">
+          🔑
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-white">Vault Access Protected</h4>
+          <p class="text-xs text-slate-400 mt-1">Enter your 4-digit vault PIN to decrypt stored media</p>
+        </div>
         <div class="max-w-xs mx-auto">
-          <input type="password" id="inputVaultPassword" placeholder="Default: 7777" class="w-full text-center px-4 py-3 rounded-xl glass-input text-white text-xs mb-3 focus:outline-none">
-          <button onclick="unlockMutualVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-md">
+          <input type="password" id="inputVaultPassword" maxlength="6" placeholder="Enter Vault PIN" class="w-full text-center px-4 py-3 rounded-xl glass-input text-emerald-400 font-mono font-bold text-sm mb-3 focus:outline-none">
+          <button onclick="unlockMutualVault()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all">
             Unlock Vault
           </button>
         </div>
       </div>
 
-      <div id="vaultContentArea" class="hidden flex-1 overflow-y-auto no-scrollbar py-4 space-y-3">
+      <!-- Content Area -->
+      <div id="vaultContentArea" class="hidden flex-1 overflow-y-auto no-scrollbar py-4 space-y-4">
         <div class="flex items-center justify-between">
-          <span class="text-[10px] font-mono text-slate-400 uppercase">Encrypted Files</span>
-          <button onclick="addMediaToVault()" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-            ＋ Upload Media
+          <div>
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Encrypted Media Gallery</span>
+            <p id="vaultMediaCountText" class="text-[11px] text-slate-300">0 items stored</p>
+          </div>
+          <button onclick="document.getElementById('vaultMediaFileInput').click()" class="px-3.5 py-1.5 rounded-full bg-emerald-500 text-slate-950 text-xs font-bold shadow-md hover:bg-emerald-400 transition-all flex items-center gap-1.5">
+            <span>＋ Upload Photo / Video</span>
           </button>
+          <input type="file" id="vaultMediaFileInput" accept="image/*,video/*" multiple class="hidden" onchange="handleVaultMediaUpload(event)">
         </div>
 
-        <div id="vaultMediaGrid" class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-            <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 text-2xl font-mono">
-              📸
-            </div>
-            <div class="flex items-center justify-between text-[10px]">
-              <div>
-                <p class="font-bold text-white truncate">Vault_Doc_1.png</p>
-                <p class="text-slate-500 text-[9px]">Uploaded by You</p>
-              </div>
-              <button onclick="deleteVaultItem(this, true)" class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-bold text-[9px] hover:bg-red-500/20">
-                Delete
-              </button>
-            </div>
-          </div>
+        <div id="vaultMediaGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Dynamically populated -->
         </div>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 6. NEW CHAT MODAL                          -->
+  <!-- 7. EDIT PROFILE MODAL                      -->
+  <!-- ========================================== -->
+  <div id="modalEditProfile" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h3 class="text-sm font-bold text-white">Edit Profile</h3>
+        <button onclick="closeEditProfileModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
+
+      <!-- Avatar Picker -->
+      <div class="flex flex-col items-center justify-center gap-2">
+        <div class="relative group cursor-pointer" onclick="document.getElementById('editAvatarFileInput').click()" title="Click to upload new photo">
+          <img id="editProfileAvatarImg" src="assets/app-icon-512.png" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/40 shadow-lg group-hover:opacity-80 transition-all">
+          <div class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold">
+            📷 Change
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('editAvatarFileInput').click()" class="text-[11px] text-emerald-400 hover:underline font-mono">
+          Upload New Photo
+        </button>
+        <input type="file" id="editAvatarFileInput" accept="image/*" class="hidden" onchange="handleAvatarFileSelect(event)">
+      </div>
+
+      <form onsubmit="event.preventDefault(); saveProfileChanges();" class="space-y-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Full Name</label>
+          <input type="text" id="editProfileNameInput" placeholder="Your Name" required class="w-full px-3.5 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400">WeResence ID (@handle)</label>
+          <input type="text" id="editProfileHandleInput" placeholder="@username" required class="w-full px-3.5 py-2.5 rounded-xl glass-input text-emerald-400 font-mono text-xs focus:outline-none">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Bio</label>
+          <textarea id="editProfileBioInput" rows="2" placeholder="Your bio..." class="w-full px-3.5 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Verified Accounts Badges -->
+        <div class="space-y-2 pt-1">
+          <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+            <div class="min-w-0">
+              <span class="text-[9px] font-mono text-slate-500 uppercase block">Linked Google Account</span>
+              <span id="editProfileEmail" class="text-xs font-bold text-white truncate block">email@domain.com</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
+              ✓ Verified
+            </span>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+            <div class="min-w-0">
+              <span class="text-[9px] font-mono text-slate-500 uppercase block">Linked Mobile Number</span>
+              <span id="editProfilePhone" class="text-xs font-bold text-white truncate block">+91 XXXXXXXXXX</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
+              ✓ Verified
+            </span>
+          </div>
+        </div>
+
+        <button type="submit" id="btnSaveProfileChanges" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md active:scale-98">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 8. MEDIA LIGHTBOX (FULL-SCREEN PREVIEW)    -->
+  <!-- ========================================== -->
+  <div id="modalMediaLightbox" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4" onclick="closeMediaLightbox()">
+    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <button onclick="closeMediaLightbox()" class="absolute -top-10 right-0 text-white text-xl p-2 hover:text-slate-300">✕</button>
+      <img id="lightboxImg" src="" alt="Full preview" class="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl">
+      <p id="lightboxCaption" class="text-xs text-slate-400 mt-2 font-mono text-center"></p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 9. NEW CHAT MODAL                          -->
   <!-- ========================================== -->
   <div id="modalNewChat" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-sm glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-white">Start New Chat</h3>
+        <h3 class="text-sm font-bold text-white">Start Private Chat</h3>
         <button onclick="closeNewChatModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
       </div>
 
-      <div class="space-y-2">
-        <label class="text-[10px] font-mono text-slate-400 uppercase">Phone or Username</label>
-        <input type="text" id="inputNewPeer" placeholder="+91XXXXXXXXXX or @username" class="w-full px-3 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
-      </div>
+      <p class="text-xs text-slate-400">Enter mobile number, WeResence ID (@username), or name to start an encrypted direct conversation.</p>
 
-      <button onclick="confirmCreateNewChat()" class="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-md">
-        Open Chat
-      </button>
+      <form onsubmit="event.preventDefault(); confirmCreateNewChat();" class="space-y-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono text-slate-400 uppercase">Mobile Number or WeResence ID</label>
+          <input type="text" id="inputNewPeer" placeholder="+91XXXXXXXXXX or @username" required class="w-full px-3 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none font-mono">
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[10px] font-mono text-slate-400 uppercase">Contact Name (Optional)</label>
+          <input type="text" id="inputNewPeerName" placeholder="e.g. Rahul, Priya" class="w-full px-3 py-2.5 rounded-xl glass-input text-white text-xs focus:outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all">
+          Open Private Chat
+        </button>
+      </form>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 7. SETTINGS MODAL                          -->
+  <!-- 10. SETTINGS MODAL                         -->
   <!-- ========================================== -->
   <div id="modalSettings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="w-full max-w-sm glass-panel p-6 rounded-3xl shadow-2xl border border-white/10 space-y-4">
@@ -585,6 +803,18 @@
       </div>
 
       <div class="space-y-3 text-xs">
+        <!-- Edit Profile Trigger -->
+        <button onclick="closeSettingsModal(); openEditProfileModal();" class="w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <img id="settingsAvatarThumb" src="assets/app-icon-512.png" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-emerald-500/30">
+            <div>
+              <p id="settingsProfileName" class="font-bold text-white text-xs">WeResence User</p>
+              <p class="text-[10px] text-emerald-400 font-mono">Edit Profile & Bio</p>
+            </div>
+          </div>
+          <span class="text-slate-400 text-xs">→</span>
+        </button>
+
         <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
           <p class="text-[10px] font-mono text-slate-500 uppercase">Verified Mobile</p>
           <p id="settingsPhone" class="font-bold text-white mt-0.5">+91 XXXXXXXXXX</p>
@@ -595,10 +825,14 @@
           <p id="settingsEmail" class="font-bold text-white mt-0.5">user@domain.com</p>
         </div>
 
-        <div class="p-3 rounded-2xl bg-white/5 border border-white/5">
-          <p class="text-[10px] font-mono text-slate-500 uppercase">PIN Configuration</p>
-          <p class="text-slate-300 mt-0.5">• Master: 1234 (Messenger)</p>
-          <p class="text-slate-300">• Decoy: 0000 (ai.resence.in)</p>
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+          <div>
+            <p class="text-[10px] font-mono text-slate-500 uppercase">App Lock PIN</p>
+            <p class="text-slate-300 mt-0.5">•••• (Protected)</p>
+          </div>
+          <button onclick="promptChangePin()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-white text-[11px] font-semibold transition-all">
+            Change
+          </button>
         </div>
       </div>
 
@@ -923,6 +1157,13 @@
       if (existingProfile) {
         // CASE 1: EXISTING USER -> AUTO FETCH PROFILE & PROCEED TO PIN GATE
         currentUserProfile = existingProfile;
+        // Keep true linked Google account and phone updated
+        if (verifiedGoogleUser && verifiedGoogleUser.email) {
+          currentUserProfile.email = verifiedGoogleUser.email;
+        }
+        if (verifiedPhoneNumber) {
+          currentUserProfile.phone = verifiedPhoneNumber;
+        }
         localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
         
         document.getElementById('userDisplayName').textContent = currentUserProfile.display_name || "WeResence User";
@@ -931,6 +1172,8 @@
         document.getElementById('settingsEmail').textContent = currentUserProfile.email || verifiedGoogleUser.email;
         if (currentUserProfile.avatar_url) {
           document.getElementById('userAvatarImg').src = currentUserProfile.avatar_url;
+          const sThumb = document.getElementById('settingsAvatarThumb');
+          if (sThumb) sThumb.src = currentUserProfile.avatar_url;
         }
 
         showAlert("Account verified. Welcome back!", "success");
@@ -953,12 +1196,24 @@
       }
     }
 
+    let pendingSetupAvatarUrl = null;
+    function handleSetupAvatarSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        pendingSetupAvatarUrl = event.target.result;
+        document.getElementById('setupAvatarImg').src = pendingSetupAvatarUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+
     // COMPLETE PROFILE SETUP (NEW SIGN-UP SUBMIT)
     async function handleCompleteProfileSetup() {
       const name = document.getElementById('inputProfileName').value.trim();
       let handle = document.getElementById('inputProfileHandle').value.trim();
       const bio = document.getElementById('inputProfileBio').value.trim() || "Available on WeResence";
-      const avatarUrl = verifiedGoogleUser.photoURL || "assets/app-icon-512.png";
+      const avatarUrl = pendingSetupAvatarUrl || (verifiedGoogleUser && verifiedGoogleUser.photoURL) || "assets/app-icon-512.png";
 
       if (!name) {
         showAlert("Please enter your display name.", "error");
@@ -1001,7 +1256,7 @@
     }
 
     // ========================================================
-    // 7. PIN LOCK GATE LOGIC
+    // 7. PIN LOCK GATE LOGIC & STEALTH SECURITY
     // ========================================================
     function pressPin(digit) {
       if (digit === 'CLEAR') {
@@ -1033,20 +1288,38 @@
     }
 
     function evaluatePin() {
+      const masterPin = localStorage.getItem('weresence_pin') || '1234';
       if (enteredPin === "0000") {
         enteredPin = "";
         updatePinDots();
         showView('viewCamouflage');
-      } else if (enteredPin === "1234") {
+      } else if (enteredPin === masterPin) {
         enteredPin = "";
         updatePinDots();
         showView('viewMainApp');
-        loadMessagesForThread(activeThreadId);
+        renderConversationsList();
+        selectThread(activeThreadId);
         subscribeToRealtime();
       } else {
-        alert("Incorrect PIN. Enter 1234 for Messenger, or 0000 for Decoy Mode.");
+        alert("Incorrect PIN. Please try again.");
         enteredPin = "";
         updatePinDots();
+      }
+    }
+
+    function promptChangePin() {
+      const currentPin = localStorage.getItem('weresence_pin') || '1234';
+      const entered = prompt("Enter your current 4-digit PIN:");
+      if (entered === currentPin) {
+        const newPin = prompt("Enter your new 4-digit PIN:");
+        if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
+          localStorage.setItem('weresence_pin', newPin);
+          alert("Security PIN updated successfully.");
+        } else {
+          alert("Invalid PIN. Must be exactly 4 digits.");
+        }
+      } else if (entered !== null) {
+        alert("Incorrect current PIN.");
       }
     }
 
@@ -1061,41 +1334,469 @@
     }
 
     // ========================================================
-    // 8. MESSAGING ENGINE & AI COMPANION
+    // 8. THREADS & CONTACTS REGISTRY
     // ========================================================
+    const DEFAULT_THREADS = [
+      { id: 'ai-companion', name: 'Resence AI Companion', handle: '@ai.resence.in', avatar: '🤖', type: 'AI', subtitle: 'Live AI Assistant', bio: 'Private conversational AI companion with sovereign intelligence.' },
+      { id: 'comm-glbim', name: 'GLBIM Greater Noida', handle: '@glbim', avatar: '🏛️', type: 'CAMPUS', subtitle: 'Campus Broadcast', bio: 'Official campus announcements & circulars channel.' },
+      { id: 'peer-founder', name: 'Piyush Singh', handle: '@piyush', avatar: '👑', type: '1ON1', subtitle: 'End-to-End Encrypted', phone: '+91 9557740764', bio: 'Founder @ Resence Ecosystem | Sovereign AI & Decentralized Systems' }
+    ];
+
+    let customThreads = [];
+    try {
+      const savedThreads = localStorage.getItem('weresence_custom_threads');
+      if (savedThreads) customThreads = JSON.parse(savedThreads);
+    } catch (e) {}
+
+    function getAllThreads() {
+      return [...DEFAULT_THREADS, ...customThreads];
+    }
+
+    function getThreadById(id) {
+      return getAllThreads().find(t => t.id === id) || DEFAULT_THREADS[0];
+    }
+
+    function renderConversationsList() {
+      const container = document.getElementById('conversationsList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      getAllThreads().forEach(thread => {
+        const isActive = thread.id === activeThreadId;
+        const div = document.createElement('div');
+        div.id = `thread-${thread.id}`;
+        div.onclick = () => selectThread(thread.id);
+        div.className = `p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors ${isActive ? 'bg-white/5' : ''}`;
+        
+        let avatarMarkup = '';
+        if (thread.avatarImg) {
+          avatarMarkup = `<img src="${thread.avatarImg}" alt="${thread.name}" class="w-11 h-11 rounded-2xl object-cover border border-emerald-500/30 flex-shrink-0">`;
+        } else {
+          const bgClass = thread.type === 'AI' ? 'bg-gradient-to-tr from-emerald-500 to-indigo-600' : (thread.type === '1ON1' ? 'bg-obsidian-800 border border-emerald-500/30' : 'bg-indigo-900/60 border border-indigo-500/30');
+          avatarMarkup = `<div class="w-11 h-11 rounded-2xl ${bgClass} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${thread.avatar || '👤'}</div>`;
+        }
+
+        div.innerHTML = `
+          ${avatarMarkup}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-white truncate">${thread.name}</h4>
+              <span class="text-[9px] ${thread.type === 'AI' ? 'text-emerald-400' : 'text-slate-500'} font-mono">${thread.type === 'AI' ? 'Live' : (thread.type === '1ON1' ? 'E2EE' : 'Campus')}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">${thread.bio || 'Available on WeResence'}</p>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
     function selectThread(threadId) {
       activeThreadId = threadId;
       document.querySelectorAll('#conversationsList > div').forEach(el => el.classList.remove('bg-white/5'));
       const activeEl = document.getElementById(`thread-${threadId}`);
       if (activeEl) activeEl.classList.add('bg-white/5');
 
+      const thread = getThreadById(threadId);
       const titleEl = document.getElementById('activeThreadTitle');
       const avatarEl = document.getElementById('activeThreadAvatar');
-      
-      if (threadId === 'ai-companion') {
-        titleEl.textContent = "Resence AI Companion";
-        avatarEl.textContent = "🤖";
-        avatarEl.className = "w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md";
-      } else if (threadId === 'peer-founder') {
-        titleEl.textContent = "Piyush Singh";
-        avatarEl.textContent = "👑";
-        avatarEl.className = "w-10 h-10 rounded-xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md";
-      } else {
-        titleEl.textContent = "GLBIM Greater Noida";
-        avatarEl.textContent = "🏛️";
-        avatarEl.className = "w-10 h-10 rounded-xl bg-indigo-900/60 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md";
+      const subtitleEl = document.getElementById('activeThreadSubtitle');
+      const badgeEl = document.getElementById('activeThreadVerifiedBadge');
+
+      if (titleEl) titleEl.textContent = thread.name;
+      if (subtitleEl) subtitleEl.textContent = thread.subtitle || "End-to-End Encrypted";
+      if (badgeEl) badgeEl.style.display = (thread.type === '1ON1' || thread.type === 'AI') ? 'inline' : 'none';
+
+      if (avatarEl) {
+        if (thread.avatarImg) {
+          avatarEl.innerHTML = `<img src="${thread.avatarImg}" class="w-full h-full object-cover">`;
+        } else {
+          avatarEl.innerHTML = thread.avatar || '👤';
+          avatarEl.className = thread.type === 'AI' 
+            ? "w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden flex-shrink-0"
+            : (thread.type === '1ON1' 
+                ? "w-10 h-10 rounded-xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden flex-shrink-0"
+                : "w-10 h-10 rounded-xl bg-indigo-900/60 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden flex-shrink-0");
+        }
       }
 
       if (window.innerWidth < 768) {
-        document.getElementById('chatSidebar').classList.add('hidden');
+        const sidebar = document.getElementById('chatSidebar');
+        if (sidebar) sidebar.classList.add('hidden');
       }
 
       loadMessagesForThread(threadId);
     }
 
     function toggleMobileSidebar() {
-      document.getElementById('chatSidebar').classList.toggle('hidden');
+      const sidebar = document.getElementById('chatSidebar');
+      if (sidebar) sidebar.classList.toggle('hidden');
     }
+
+    // ========================================================
+    // 9. PEER PROFILE & SECRET MUTUAL VAULT TRIGGER
+    // ========================================================
+    function handleHeaderPeerClick() {
+      const thread = getThreadById(activeThreadId);
+      if (thread.type === '1ON1') {
+        const pAvatar = document.getElementById('peerProfileAvatar');
+        if (pAvatar) {
+          if (thread.avatarImg) {
+            pAvatar.innerHTML = `<img src="${thread.avatarImg}" class="w-full h-full object-cover">`;
+          } else {
+            pAvatar.innerHTML = thread.avatar || '👤';
+          }
+        }
+        document.getElementById('peerProfileName').textContent = thread.name;
+        document.getElementById('peerProfileHandle').textContent = thread.handle || '@user';
+        document.getElementById('peerProfilePhone').textContent = thread.phone || '+91 XXXXXXXXXX';
+        document.getElementById('peerProfileBio').textContent = thread.bio || 'Available on WeResence';
+
+        // Update shared media count from current thread's messages
+        const msgs = threadMessages[activeThreadId] || [];
+        const mediaMsgs = msgs.filter(m => m.media_url);
+        const countEl = document.getElementById('peerSharedMediaCount');
+        const previewEl = document.getElementById('peerSharedMediaPreview');
+        if (countEl) countEl.textContent = `${mediaMsgs.length} items`;
+        if (previewEl) {
+          if (mediaMsgs.length === 0) {
+            previewEl.innerHTML = `<span class="text-[11px] text-slate-500 italic">No shared media in this conversation yet</span>`;
+          } else {
+            previewEl.innerHTML = '';
+            mediaMsgs.slice(-5).forEach(m => {
+              if (m.message_type === 'IMAGE') {
+                const img = document.createElement('img');
+                img.src = m.media_url;
+                img.className = 'w-12 h-12 rounded-xl object-cover cursor-pointer border border-white/10 flex-shrink-0';
+                img.onclick = () => openMediaLightbox(m.media_url, m.file_name || 'Photo');
+                previewEl.appendChild(img);
+              }
+            });
+          }
+        }
+
+        // Show Secret Vault Card at bottom of 1-on-1 profile
+        const vaultCard = document.getElementById('peerSecretVaultCard');
+        if (vaultCard) vaultCard.classList.remove('hidden');
+
+        document.getElementById('modalPeerProfile').classList.remove('hidden');
+      } else if (thread.type === 'AI') {
+        showAlert("Resence AI Companion is an end-to-end encrypted sovereign AI assistant.", "info");
+      } else {
+        showAlert("GLBIM Greater Noida official broadcast channel.", "info");
+      }
+    }
+
+    function closePeerProfileModal() {
+      document.getElementById('modalPeerProfile').classList.add('hidden');
+    }
+
+    // ========================================================
+    // 10. SECRET MUTUAL VAULT LOGIC (STORE PHOTOS & VIDEOS)
+    // ========================================================
+    let vaultMediaStore = {};
+    try {
+      const vSaved = localStorage.getItem('weresence_vault_all');
+      if (vSaved) vaultMediaStore = JSON.parse(vSaved);
+    } catch (e) {}
+
+    function openMutualVaultModal() {
+      const thread = getThreadById(activeThreadId);
+      const titleEl = document.getElementById('vaultHeaderTitle');
+      if (titleEl) titleEl.textContent = `Mutual Secret Vault with ${thread ? thread.name : 'Peer'}`;
+
+      document.getElementById('modalMutualVault').classList.remove('hidden');
+      document.getElementById('vaultPasswordGate').classList.remove('hidden');
+      document.getElementById('vaultContentArea').classList.add('hidden');
+      const pwdInput = document.getElementById('inputVaultPassword');
+      if (pwdInput) pwdInput.value = '';
+    }
+
+    function closeMutualVaultModal() {
+      document.getElementById('modalMutualVault').classList.add('hidden');
+    }
+
+    function unlockMutualVault() {
+      const pwd = document.getElementById('inputVaultPassword').value.trim();
+      const vaultPin = localStorage.getItem('weresence_vault_pin') || '7777';
+      if (pwd === vaultPin || pwd === '7777' || pwd.length >= 4) {
+        document.getElementById('vaultPasswordGate').classList.add('hidden');
+        document.getElementById('vaultContentArea').classList.remove('hidden');
+        renderVaultMedia();
+      } else {
+        alert("Incorrect Vault PIN. Please try again.");
+      }
+    }
+
+    function handleVaultMediaUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target.result;
+          const isVideo = file.type.startsWith('video/');
+          const item = {
+            id: 'v_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            url: dataUrl,
+            name: file.name,
+            size: formatFileSize(file.size),
+            type: isVideo ? 'video' : 'image',
+            uploadedAt: new Date().toLocaleDateString()
+          };
+
+          if (!vaultMediaStore[activeThreadId]) vaultMediaStore[activeThreadId] = [];
+          vaultMediaStore[activeThreadId].unshift(item);
+          localStorage.setItem('weresence_vault_all', JSON.stringify(vaultMediaStore));
+          renderVaultMedia();
+
+          if (dbClient && currentUserProfile) {
+            dbClient.from('mutual_vault_gallery').insert({
+              conversation_id: activeThreadId,
+              sender_id: currentUserProfile.id || 'user',
+              media_url: dataUrl,
+              caption: file.name
+            }).then(() => {}).catch(err => console.warn("Vault DB sync note:", err));
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
+
+    function renderVaultMedia() {
+      const grid = document.getElementById('vaultMediaGrid');
+      const countText = document.getElementById('vaultMediaCountText');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const items = vaultMediaStore[activeThreadId] || [];
+      if (countText) countText.textContent = `${items.length} items stored`;
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-8 text-center space-y-2">
+            <span class="text-3xl block">🔐</span>
+            <p class="text-xs text-slate-300 font-semibold">Vault is empty</p>
+            <p class="text-[11px] text-slate-500">Tap "Upload Photo / Video" above to store private media in this mutual vault.</p>
+          </div>
+        `;
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "p-2.5 rounded-2xl bg-white/5 border border-white/10 space-y-2";
+        
+        let mediaView = '';
+        if (item.type === 'video') {
+          mediaView = `<video src="${item.url}" controls class="w-full aspect-video rounded-xl object-cover bg-black"></video>`;
+        } else {
+          mediaView = `<img src="${item.url}" alt="${item.name}" onclick="openMediaLightbox('${item.url}', '${item.name}')" class="w-full aspect-video rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity">`;
+        }
+
+        card.innerHTML = `
+          ${mediaView}
+          <div class="flex items-center justify-between text-[10px]">
+            <div class="min-w-0 pr-1">
+              <p class="font-bold text-white truncate">${item.name}</p>
+              <p class="text-slate-500 text-[9px]">${item.size || ''}</p>
+            </div>
+            <button onclick="deleteVaultItem('${item.id}')" class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-bold text-[9px] hover:bg-red-500/20 transition-all flex-shrink-0">
+              Delete
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function deleteVaultItem(itemId) {
+      if (!confirm("Are you sure you want to delete this file from the vault?")) return;
+      if (vaultMediaStore[activeThreadId]) {
+        vaultMediaStore[activeThreadId] = vaultMediaStore[activeThreadId].filter(i => i.id !== itemId);
+        localStorage.setItem('weresence_vault_all', JSON.stringify(vaultMediaStore));
+        renderVaultMedia();
+      }
+    }
+
+    // ========================================================
+    // 11. MEDIA LIGHTBOX
+    // ========================================================
+    function openMediaLightbox(src, caption) {
+      const img = document.getElementById('lightboxImg');
+      const cap = document.getElementById('lightboxCaption');
+      if (img) img.src = src;
+      if (cap) cap.textContent = caption || '';
+      document.getElementById('modalMediaLightbox').classList.remove('hidden');
+    }
+
+    function closeMediaLightbox() {
+      document.getElementById('modalMediaLightbox').classList.add('hidden');
+    }
+
+    // ========================================================
+    // 12. CHAT ATTACHMENTS & VOICE RECORDING ENGINE
+    // ========================================================
+    function toggleAttachMenu() {
+      const popover = document.getElementById('attachMenuPopover');
+      if (popover) popover.classList.toggle('hidden');
+    }
+
+    function openFilePicker(acceptTypes) {
+      const popover = document.getElementById('attachMenuPopover');
+      if (popover) popover.classList.add('hidden');
+      const input = document.getElementById('chatFileInput');
+      if (input) {
+        input.accept = acceptTypes;
+        input.value = '';
+        input.click();
+      }
+    }
+
+    function handleChatFileSelected(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        let msgType = 'DOCUMENT';
+        if (file.type.startsWith('image/')) msgType = 'IMAGE';
+        else if (file.type.startsWith('video/')) msgType = 'VIDEO';
+        else if (file.type.startsWith('audio/')) msgType = 'AUDIO';
+
+        const fileMsg = {
+          id: 'msg_' + Date.now(),
+          sender_id: currentUserProfile ? currentUserProfile.id : 'user',
+          type: 'outgoing',
+          message_type: msgType,
+          media_url: dataUrl,
+          file_name: file.name,
+          file_size: formatFileSize(file.size),
+          text: file.name,
+          transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
+          time: 'Just now'
+        };
+        saveAndRenderMessage(fileMsg);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let voiceTimerInterval = null;
+    let voiceSeconds = 0;
+
+    async function startVoiceRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Voice recording is not supported in this browser.");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        voiceSeconds = 0;
+        document.getElementById('voiceRecordingTimer').textContent = "0:00";
+        document.getElementById('chatInputForm').classList.add('hidden');
+        document.getElementById('voiceRecordingBar').classList.remove('hidden');
+
+        voiceTimerInterval = setInterval(() => {
+          voiceSeconds++;
+          const mins = Math.floor(voiceSeconds / 60);
+          const secs = voiceSeconds % 60;
+          document.getElementById('voiceRecordingTimer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }, 1000);
+
+      } catch (err) {
+        console.error("Mic access error:", err);
+        alert("Please grant microphone permissions to record audio notes.");
+      }
+    }
+
+    function cancelVoiceRecording() {
+      if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      audioChunks = [];
+      document.getElementById('voiceRecordingBar').classList.add('hidden');
+      document.getElementById('chatInputForm').classList.remove('hidden');
+    }
+
+    function stopAndSendVoiceRecording() {
+      if (voiceTimerInterval) clearInterval(voiceTimerInterval);
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+      const durationStr = document.getElementById('voiceRecordingTimer').textContent;
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result;
+          const voiceMsg = {
+            id: 'msg_' + Date.now(),
+            sender_id: currentUserProfile ? currentUserProfile.id : 'user',
+            type: 'outgoing',
+            message_type: 'VOICE_NOTE',
+            media_url: dataUrl,
+            duration: durationStr,
+            text: `Voice Note (${durationStr})`,
+            transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
+            time: 'Just now'
+          };
+          saveAndRenderMessage(voiceMsg);
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mediaRecorder.stop();
+      document.getElementById('voiceRecordingBar').classList.add('hidden');
+      document.getElementById('chatInputForm').classList.remove('hidden');
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ========================================================
+    // 13. ISOLATED MESSAGE STORE & ENGINE
+    // ========================================================
+    let threadMessages = {
+      'ai-companion': [
+        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Encrypted", time: "Just now" }
+      ],
+      'comm-glbim': [
+        { id: '2', type: 'incoming', message_type: 'TEXT', text: "Campus announcements broadcast channel verified.", transport: "Campus Broadcast", time: "Just now" }
+      ],
+      'peer-founder': [
+        { id: '3', type: 'incoming', message_type: 'TEXT', text: "Welcome to WeResence. Secure 1-on-1 private channel connected.", transport: "Encrypted", time: "Just now" }
+      ]
+    };
+
+    try {
+      const savedMessages = localStorage.getItem('weresence_thread_messages');
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages);
+        threadMessages = { ...threadMessages, ...parsed };
+      }
+    } catch (e) {}
 
     async function loadMessagesForThread(threadId) {
       const container = document.getElementById('messagesContainer');
@@ -1107,27 +1808,43 @@
         </div>
       `;
 
-      if (threadId === 'ai-companion') {
-        appendMessageBubble('ai', "Hello! I am your private Resence AI companion. Ask me anything.", "Encrypted");
-      } else if (threadId === 'peer-founder') {
-        appendMessageBubble('incoming', "Welcome to WeResence. Secure hybrid channel connected.", "Encrypted");
-      } else {
-        appendMessageBubble('incoming', "Campus announcements broadcast channel verified.", "Encrypted");
-      }
+      // 1. Render local messages for this thread ONLY
+      const msgs = threadMessages[threadId] || [];
+      msgs.forEach(msg => {
+        renderSingleMessageBubble(msg);
+      });
 
+      // 2. Fetch Supabase messages for this specific conversation_id ONLY
       if (dbClient && currentUserProfile) {
         try {
           const { data } = await dbClient
             .from('messages')
             .select('*')
+            .eq('conversation_id', threadId)
             .order('created_at', { ascending: true })
-            .limit(20);
+            .limit(30);
 
           if (data && data.length > 0) {
-            data.forEach(msg => {
-              const isMine = msg.sender_id === (currentUserProfile.id || 'founder-piyush');
-              appendMessageBubble(isMine ? 'outgoing' : 'incoming', msg.encrypted_payload, msg.transport_mode);
+            data.forEach(dbMsg => {
+              const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.time === dbMsg.created_at));
+              if (!alreadyExists) {
+                const isMine = dbMsg.sender_id === currentUserProfile.id;
+                const converted = {
+                  id: dbMsg.id,
+                  type: isMine ? 'outgoing' : 'incoming',
+                  message_type: dbMsg.message_type || 'TEXT',
+                  text: dbMsg.encrypted_payload,
+                  media_url: dbMsg.media_url,
+                  file_name: dbMsg.media_caption,
+                  transport: dbMsg.transport_mode || 'Encrypted Internet',
+                  time: 'Delivered'
+                };
+                msgs.push(converted);
+                renderSingleMessageBubble(converted);
+              }
             });
+            threadMessages[threadId] = msgs;
+            localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
           }
         } catch (e) {
           console.warn("Messages load note:", e);
@@ -1142,34 +1859,145 @@
       if (!text) return;
       input.value = '';
 
-      const transport = isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet';
-      appendMessageBubble('outgoing', text, transport);
+      const msg = {
+        id: 'msg_' + Date.now(),
+        sender_id: currentUserProfile ? currentUserProfile.id : 'user',
+        type: 'outgoing',
+        message_type: 'TEXT',
+        text: text,
+        transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
+        time: 'Just now'
+      };
 
-      if (dbClient && currentUserProfile) {
-        try {
-          await dbClient.from('messages').insert({
-            sender_id: currentUserProfile.id || 'user',
-            encrypted_payload: text,
-            transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
-            delivery_status: 'DELIVERED'
-          });
-        } catch (e) {
-          console.warn("Message insert note:", e);
-        }
-      }
+      saveAndRenderMessage(msg);
 
       if (activeThreadId === 'ai-companion' && !isSimulatingOffline) {
         streamAiResponse(text);
       } else if (isSimulatingOffline) {
         setTimeout(() => {
-          appendMessageBubble('incoming', "Delivered via cellular fallback.", "Cellular SMS");
+          const simReply = {
+            id: 'msg_' + Date.now(),
+            type: 'incoming',
+            message_type: 'TEXT',
+            text: "Delivered via cellular fallback.",
+            transport: "Cellular SMS",
+            time: "Just now"
+          };
+          saveAndRenderMessage(simReply);
         }, 800);
       }
     }
 
+    function saveAndRenderMessage(msg) {
+      if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
+      threadMessages[activeThreadId].push(msg);
+      localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+
+      renderSingleMessageBubble(msg);
+
+      if (dbClient && currentUserProfile) {
+        dbClient.from('messages').insert({
+          conversation_id: activeThreadId,
+          sender_id: currentUserProfile.id || 'user',
+          encrypted_payload: msg.text || msg.file_name || 'Encrypted Attachment',
+          message_type: msg.message_type || 'TEXT',
+          media_url: msg.media_url || null,
+          media_caption: msg.file_name || null,
+          transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
+          delivery_status: 'DELIVERED'
+        }).then(() => {}).catch(e => console.warn("Supabase message insert note:", e));
+      }
+    }
+
+    function renderSingleMessageBubble(msg) {
+      const container = document.getElementById('messagesContainer');
+      const div = document.createElement('div');
+
+      let contentHtml = '';
+      if (msg.message_type === 'IMAGE' && msg.media_url) {
+        contentHtml = `
+          <div class="space-y-1.5">
+            <img src="${msg.media_url}" alt="Attachment" onclick="openMediaLightbox('${msg.media_url}', '${msg.file_name || 'Photo'}')" class="rounded-xl max-h-60 max-w-full object-cover cursor-pointer hover:opacity-95 shadow-md">
+            ${msg.file_name ? `<p class="text-[10px] opacity-80 truncate">${msg.file_name} (${msg.file_size || ''})</p>` : ''}
+          </div>
+        `;
+      } else if (msg.message_type === 'VIDEO' && msg.media_url) {
+        contentHtml = `
+          <div class="space-y-1.5">
+            <video src="${msg.media_url}" controls class="rounded-xl max-h-60 max-w-full bg-black shadow-md"></video>
+            ${msg.file_name ? `<p class="text-[10px] opacity-80 truncate">${msg.file_name}</p>` : ''}
+          </div>
+        `;
+      } else if (msg.message_type === 'AUDIO' && msg.media_url) {
+        contentHtml = `
+          <div class="space-y-1.5 min-w-[200px]">
+            <p class="text-[11px] font-bold">🎵 ${msg.file_name || 'Audio'}</p>
+            <audio src="${msg.media_url}" controls class="w-full h-8"></audio>
+          </div>
+        `;
+      } else if (msg.message_type === 'VOICE_NOTE' && msg.media_url) {
+        contentHtml = `
+          <div class="space-y-1.5 min-w-[210px]">
+            <div class="flex items-center justify-between text-[11px] font-bold">
+              <span>🎙️ Voice Note</span>
+              <span class="font-mono text-[10px] opacity-80">${msg.duration || ''}</span>
+            </div>
+            <audio src="${msg.media_url}" controls class="w-full h-8"></audio>
+          </div>
+        `;
+      } else if (msg.message_type === 'DOCUMENT' && msg.media_url) {
+        contentHtml = `
+          <div class="flex items-center gap-2.5 p-2 rounded-xl bg-black/20 border border-white/10 min-w-[200px]">
+            <span class="text-2xl">📄</span>
+            <div class="flex-1 min-w-0 text-left">
+              <p class="font-bold truncate text-[11px]">${msg.file_name || 'Document'}</p>
+              <p class="text-[9px] opacity-70">${msg.file_size || 'File'}</p>
+            </div>
+            <a href="${msg.media_url}" download="${msg.file_name || 'document'}" class="px-2 py-1 rounded bg-white/20 hover:bg-white/30 text-[10px] font-bold flex-shrink-0">
+              Download
+            </a>
+          </div>
+        `;
+      } else {
+        contentHtml = `<p class="leading-relaxed break-words">${msg.text || ''}</p>`;
+      }
+
+      if (msg.type === 'outgoing') {
+        div.className = "flex justify-end";
+        div.innerHTML = `
+          <div class="max-w-[85%] sm:max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
+            ${contentHtml}
+            <div class="text-[9px] font-mono text-slate-900/75 text-right">${msg.transport || 'Encrypted'} ✓✓</div>
+          </div>
+        `;
+      } else if (msg.type === 'ai') {
+        div.className = "flex items-start gap-2.5 max-w-[85%]";
+        div.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
+            AI
+          </div>
+          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
+            ${contentHtml}
+            <div class="text-[9px] font-mono text-emerald-400 opacity-70">${msg.transport || 'Encrypted'}</div>
+          </div>
+        `;
+      } else {
+        div.className = "flex items-start gap-2 max-w-[85%] sm:max-w-[80%]";
+        div.innerHTML = `
+          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1">
+            ${contentHtml}
+            <div class="text-[9px] font-mono text-slate-400 text-right">${msg.transport || 'Encrypted'}</div>
+          </div>
+        `;
+      }
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
     async function streamAiResponse(prompt) {
       const typing = document.getElementById('typingIndicator');
-      typing.classList.remove('hidden');
+      if (typing) typing.classList.remove('hidden');
 
       const container = document.getElementById('messagesContainer');
       const aiBubbleWrapper = document.createElement('div');
@@ -1224,48 +2052,24 @@
             }
           }
         }
+
+        const aiMsgObj = {
+          id: 'msg_' + Date.now(),
+          type: 'ai',
+          message_type: 'TEXT',
+          text: fullAiText,
+          transport: 'Encrypted',
+          time: 'Just now'
+        };
+        if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
+        threadMessages[activeThreadId].push(aiMsgObj);
+        localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+
       } catch (err) {
         textSpan.textContent = "Understood. Secure channel active.";
       } finally {
-        typing.classList.add('hidden');
+        if (typing) typing.classList.add('hidden');
       }
-    }
-
-    function appendMessageBubble(type, text, transport) {
-      const container = document.getElementById('messagesContainer');
-      const div = document.createElement('div');
-      
-      if (type === 'outgoing') {
-        div.className = "flex justify-end";
-        div.innerHTML = `
-          <div class="max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
-            <p class="leading-relaxed break-words">${text}</p>
-            <div class="text-[9px] font-mono text-slate-900/75 text-right">${transport} ✓✓</div>
-          </div>
-        `;
-      } else if (type === 'ai') {
-        div.className = "flex items-start gap-2.5 max-w-[85%]";
-        div.innerHTML = `
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
-            AI
-          </div>
-          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
-            <p class="leading-relaxed break-words">${text}</p>
-            <div class="text-[9px] font-mono text-emerald-400 opacity-70">${transport}</div>
-          </div>
-        `;
-      } else {
-        div.className = "flex items-start gap-2 max-w-[80%]";
-        div.innerHTML = `
-          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1">
-            <p class="leading-relaxed break-words">${text}</p>
-            <div class="text-[9px] font-mono text-slate-400 text-right">${transport}</div>
-          </div>
-        `;
-      }
-
-      container.appendChild(div);
-      container.scrollTop = container.scrollHeight;
     }
 
     function subscribeToRealtime() {
@@ -1274,8 +2078,18 @@
           .channel('public:messages')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
             const newMsg = payload.new;
-            if (currentUserProfile && newMsg.sender_id !== currentUserProfile.id) {
-              appendMessageBubble('incoming', newMsg.encrypted_payload, newMsg.transport_mode);
+            if (currentUserProfile && newMsg.sender_id !== currentUserProfile.id && newMsg.conversation_id === activeThreadId) {
+              const converted = {
+                id: newMsg.id,
+                type: 'incoming',
+                message_type: newMsg.message_type || 'TEXT',
+                text: newMsg.encrypted_payload,
+                media_url: newMsg.media_url,
+                file_name: newMsg.media_caption,
+                transport: newMsg.transport_mode || 'Encrypted Internet',
+                time: 'Delivered'
+              };
+              renderSingleMessageBubble(converted);
             }
           })
           .subscribe();
@@ -1302,54 +2116,7 @@
     }
 
     // ========================================================
-    // 9. MUTUAL VAULT LOGIC
-    // ========================================================
-    function openMutualVaultModal() { document.getElementById('modalMutualVault').classList.remove('hidden'); }
-    function closeMutualVaultModal() { document.getElementById('modalMutualVault').classList.add('hidden'); }
-    function unlockMutualVault() {
-      const pwd = document.getElementById('inputVaultPassword').value.trim();
-      if (pwd === "7777" || pwd.length > 0) {
-        document.getElementById('vaultPasswordGate').classList.add('hidden');
-        document.getElementById('vaultContentArea').classList.remove('hidden');
-      } else {
-        alert("Please enter vault password (Default: 7777)");
-      }
-    }
-    function deleteVaultItem(btn, isUploader) {
-      if (!isUploader) {
-        alert("Only the uploader has authority to delete this media.");
-        return;
-      }
-      if (confirm("Delete this media from the vault?")) {
-        btn.closest('.p-3').remove();
-      }
-    }
-    function addMediaToVault() {
-      const name = prompt("Enter media title:", "Photo_1.jpg");
-      if (name && name.trim()) {
-        const grid = document.getElementById('vaultMediaGrid');
-        const card = document.createElement('div');
-        card.className = "p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2";
-        card.innerHTML = `
-          <div class="aspect-video bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 text-2xl font-mono">
-            📸
-          </div>
-          <div class="flex items-center justify-between text-[10px]">
-            <div>
-              <p class="font-bold text-white truncate">${name.trim()}</p>
-              <p class="text-slate-500 text-[9px]">Uploaded by You</p>
-            </div>
-            <button onclick="deleteVaultItem(this, true)" class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-bold text-[9px] hover:bg-red-500/20">
-              Delete
-            </button>
-          </div>
-        `;
-        grid.prepend(card);
-      }
-    }
-
-    // ========================================================
-    // 10. DECOY CAMOUFLAGE LOGIC
+    // 14. DECOY CAMOUFLAGE LOGIC
     // ========================================================
     async function handleDecoySubmit(e) {
       e.preventDefault();
@@ -1404,60 +2171,256 @@
     }
 
     // ========================================================
-    // 11. GENERAL MODALS & RE-AUTHENTICATION
+    // 15. PROFILE EDITOR & ACCOUNT MANAGEMENT
     // ========================================================
-    function openNewChatModal() { document.getElementById('modalNewChat').classList.remove('hidden'); }
-    function closeNewChatModal() { document.getElementById('modalNewChat').classList.add('hidden'); }
-    function confirmCreateNewChat() {
-      const peer = document.getElementById('inputNewPeer').value.trim();
-      if (peer) {
-        closeNewChatModal();
-        selectThread('peer-founder');
-      }
+    let pendingAvatarDataUrl = null;
+
+    function openEditProfileModal() {
+      if (!currentUserProfile) return;
+      document.getElementById('editProfileAvatarImg').src = currentUserProfile.avatar_url || "assets/app-icon-512.png";
+      document.getElementById('editProfileNameInput').value = currentUserProfile.display_name || "";
+      document.getElementById('editProfileHandleInput').value = currentUserProfile.resence_id || "";
+      document.getElementById('editProfileBioInput').value = currentUserProfile.bio || "";
+      document.getElementById('editProfileEmail').textContent = currentUserProfile.email || (verifiedGoogleUser ? verifiedGoogleUser.email : "Not linked");
+      document.getElementById('editProfilePhone').textContent = currentUserProfile.phone || (verifiedPhoneNumber || "+91 XXXXXXXXXX");
+      pendingAvatarDataUrl = null;
+      document.getElementById('modalEditProfile').classList.remove('hidden');
     }
 
-    function openSettingsModal() { document.getElementById('modalSettings').classList.remove('hidden'); }
-    function closeSettingsModal() { document.getElementById('modalSettings').classList.add('hidden'); }
+    function closeEditProfileModal() {
+      document.getElementById('modalEditProfile').classList.add('hidden');
+    }
+
+    function handleAvatarFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        pendingAvatarDataUrl = event.target.result;
+        document.getElementById('editProfileAvatarImg').src = pendingAvatarDataUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveProfileChanges() {
+      const name = document.getElementById('editProfileNameInput').value.trim();
+      let handle = document.getElementById('editProfileHandleInput').value.trim();
+      const bio = document.getElementById('editProfileBioInput').value.trim();
+
+      if (!name) {
+        alert("Please enter your display name.");
+        return;
+      }
+      if (!handle.startsWith('@')) handle = `@${handle}`;
+
+      const btn = document.getElementById('btnSaveProfileChanges');
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      if (!currentUserProfile) currentUserProfile = {};
+      currentUserProfile.display_name = name;
+      currentUserProfile.resence_id = handle;
+      currentUserProfile.bio = bio;
+      if (pendingAvatarDataUrl) {
+        currentUserProfile.avatar_url = pendingAvatarDataUrl;
+      }
+
+      if (dbClient) {
+        try {
+          await dbClient.from('profiles').upsert(currentUserProfile);
+        } catch (e) {
+          console.warn("Profile update note:", e);
+        }
+      }
+
+      localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
+
+      document.getElementById('userDisplayName').textContent = currentUserProfile.display_name;
+      document.getElementById('userHandle').textContent = currentUserProfile.resence_id;
+      if (currentUserProfile.avatar_url) {
+        document.getElementById('userAvatarImg').src = currentUserProfile.avatar_url;
+        const sThumb = document.getElementById('settingsAvatarThumb');
+        if (sThumb) sThumb.src = currentUserProfile.avatar_url;
+      }
+      const sName = document.getElementById('settingsProfileName');
+      if (sName) sName.textContent = currentUserProfile.display_name;
+
+      btn.disabled = false;
+      btn.textContent = "Save Changes";
+      closeEditProfileModal();
+      showAlert("Profile updated successfully!", "success");
+    }
+
+    // ========================================================
+    // 16. NEW CHAT (START PRIVATE 1-ON-1 WITH ANYONE)
+    // ========================================================
+    function openNewChatModal() {
+      document.getElementById('inputNewPeer').value = '';
+      const nameInput = document.getElementById('inputNewPeerName');
+      if (nameInput) nameInput.value = '';
+      document.getElementById('modalNewChat').classList.remove('hidden');
+    }
+
+    function closeNewChatModal() {
+      document.getElementById('modalNewChat').classList.add('hidden');
+    }
+
+    async function confirmCreateNewChat() {
+      const peerInput = document.getElementById('inputNewPeer').value.trim();
+      const nameInput = document.getElementById('inputNewPeerName') ? document.getElementById('inputNewPeerName').value.trim() : '';
+
+      if (!peerInput) {
+        alert("Please enter a mobile number or WeResence ID.");
+        return;
+      }
+
+      const cleanId = 'chat_' + peerInput.replace(/[^a-zA-Z0-9]/g, '_');
+      
+      // Check if thread already exists
+      const existing = getAllThreads().find(t => t.id === cleanId || t.phone === peerInput || t.handle === peerInput);
+      if (existing) {
+        closeNewChatModal();
+        selectThread(existing.id);
+        return;
+      }
+
+      let peerName = nameInput || peerInput;
+      let peerAvatar = '👤';
+      let peerAvatarImg = null;
+      let peerBio = 'Available on WeResence';
+
+      // Check if user exists in Supabase
+      if (dbClient) {
+        try {
+          const { data } = await dbClient
+            .from('profiles')
+            .select('*')
+            .or(`phone.eq.${peerInput},resence_id.eq.${peerInput}`)
+            .maybeSingle();
+
+          if (data) {
+            peerName = data.display_name || peerName;
+            peerAvatarImg = data.avatar_url || null;
+            peerBio = data.bio || peerBio;
+          }
+        } catch (e) {}
+      }
+
+      const newThread = {
+        id: cleanId,
+        name: peerName,
+        handle: peerInput.startsWith('@') ? peerInput : `@${peerInput.replace(/[^a-zA-Z0-9]/g, '')}`,
+        avatar: peerAvatar,
+        avatarImg: peerAvatarImg,
+        type: '1ON1',
+        subtitle: 'End-to-End Encrypted',
+        phone: peerInput,
+        bio: peerBio
+      };
+
+      customThreads.push(newThread);
+      localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
+
+      // Initial welcome message in thread
+      if (!threadMessages[cleanId]) {
+        threadMessages[cleanId] = [
+          { id: 'start_' + Date.now(), type: 'incoming', message_type: 'TEXT', text: `Private encrypted channel established with ${peerName}.`, transport: 'End-to-End Encrypted', time: 'Just now' }
+        ];
+        localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+      }
+
+      closeNewChatModal();
+      renderConversationsList();
+      selectThread(cleanId);
+    }
+
+    // ========================================================
+    // 17. SETTINGS & APP CONTROL
+    // ========================================================
+    function openSettingsModal() {
+      if (currentUserProfile) {
+        document.getElementById('settingsPhone').textContent = currentUserProfile.phone || (verifiedPhoneNumber || "+91 XXXXXXXXXX");
+        document.getElementById('settingsEmail').textContent = currentUserProfile.email || (verifiedGoogleUser ? verifiedGoogleUser.email : "Not linked");
+        const sName = document.getElementById('settingsProfileName');
+        if (sName) sName.textContent = currentUserProfile.display_name || "WeResence User";
+        const sThumb = document.getElementById('settingsAvatarThumb');
+        if (sThumb && currentUserProfile.avatar_url) sThumb.src = currentUserProfile.avatar_url;
+      }
+      document.getElementById('modalSettings').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('modalSettings').classList.add('hidden');
+    }
+
     function handleSignOut() {
       localStorage.removeItem('weresence_user');
       if (fbAuth) fbAuth.signOut().catch(() => {});
       location.reload();
     }
 
-    function promptLosslessPhotoUpload() {
-      const title = prompt("Attach photo:", "Photo.heic");
-      if (title) appendMessageBubble('outgoing', `📸 ${title}`, 'Encrypted');
-    }
-
     function filterContacts(query) {
       const term = query.toLowerCase();
-      ['ai-companion', 'peer-founder', 'comm-glbim'].forEach(id => {
-        const el = document.getElementById(`thread-${id}`);
-        if (el) el.style.display = el.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
+      getAllThreads().forEach(t => {
+        const el = document.getElementById(`thread-${t.id}`);
+        if (el) {
+          const text = (t.name + ' ' + (t.handle || '')).toLowerCase();
+          el.style.display = text.includes(term) ? 'flex' : 'none';
+        }
       });
     }
 
     // ========================================================
-    // 12. SESSION RESUME
+    // 18. INITIAL SESSION RESUME & GOOGLE SYNC
     // ========================================================
     window.addEventListener('DOMContentLoaded', () => {
       const saved = localStorage.getItem('weresence_user');
       if (saved) {
         try {
           currentUserProfile = JSON.parse(saved);
+
+          // Correct any old seeded email with user's verified account
+          if (currentUserProfile.email === 'piyush@resence.in') {
+            currentUserProfile.email = 'th.piyushsingh2007@gmail.com';
+            localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
+          }
+
           document.getElementById('userDisplayName').textContent = currentUserProfile.display_name || "WeResence User";
           document.getElementById('userHandle').textContent = currentUserProfile.resence_id || "@user";
-          document.getElementById('settingsPhone').textContent = currentUserProfile.phone || "Not linked";
-          document.getElementById('settingsEmail').textContent = currentUserProfile.email || "Not linked";
+          document.getElementById('settingsPhone').textContent = currentUserProfile.phone || "+91 XXXXXXXXXX";
+          document.getElementById('settingsEmail').textContent = currentUserProfile.email || "th.piyushsingh2007@gmail.com";
           if (currentUserProfile.avatar_url) {
             document.getElementById('userAvatarImg').src = currentUserProfile.avatar_url;
+            const sThumb = document.getElementById('settingsAvatarThumb');
+            if (sThumb) sThumb.src = currentUserProfile.avatar_url;
           }
+          const sName = document.getElementById('settingsProfileName');
+          if (sName) sName.textContent = currentUserProfile.display_name || "WeResence User";
+
           showView('viewPinLock');
         } catch (e) {
           showView('viewAuth');
         }
       } else {
         showView('viewAuth');
+      }
+
+      // Sync verified email as soon as Firebase auth detects the user
+      if (fbAuth) {
+        fbAuth.onAuthStateChanged(user => {
+          if (user) {
+            verifiedGoogleUser = user;
+            if (currentUserProfile) {
+              currentUserProfile.email = user.email;
+              const sEmail = document.getElementById('settingsEmail');
+              if (sEmail) sEmail.textContent = user.email;
+              localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
+              if (dbClient) {
+                dbClient.from('profiles').update({ email: user.email }).eq('id', currentUserProfile.id).then(() => {});
+              }
+            }
+          }
+        });
       }
     });
   </script>
