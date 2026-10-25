@@ -2136,11 +2136,18 @@
       let fullAiText = '';
       let fallbackReasoning = '';
 
+      // Build conversation context history so Resence AI remembers previous exchanges
+      const contextMsgs = (threadMessages['ai-companion'] || []).slice(-6).map(m => ({
+        role: m.type === 'outgoing' ? 'user' : 'assistant',
+        content: m.text || ''
+      }));
+      contextMsgs.push({ role: 'user', content: prompt });
+
       try {
         const response = await fetch(AI_CHAT_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ messages: contextMsgs })
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -2169,8 +2176,15 @@
                   const parsed = JSON.parse(dataStr);
                   const delta = parsed.choices?.[0]?.delta;
                   if (delta) {
-                    if (delta.content) {
-                      fullAiText += delta.content;
+                    let cleanDelta = (delta.content || '')
+                      .replace(/User Safety:\s*safe/gi, '')
+                      .replace(/User Safety:\s*unsafe/gi, '')
+                      .replace(/Liquid AI/gi, 'Resence AI')
+                      .replace(/Liquid Foundation Model/gi, 'Resence AI Engine')
+                      .replace(/\bLFM\b/g, 'Resence AI');
+
+                    if (cleanDelta) {
+                      fullAiText += cleanDelta;
                       textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
                       container.scrollTop = container.scrollHeight;
                     } else if (delta.reasoning && !fullAiText) {
@@ -2195,17 +2209,24 @@
           } catch (e) {
             fullAiText = rawText;
           }
-          textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
         }
 
-        if (!fullAiText.trim()) {
+        fullAiText = fullAiText
+          .replace(/User Safety:\s*safe/gi, '')
+          .replace(/User Safety:\s*unsafe/gi, '')
+          .replace(/Liquid AI/gi, 'Resence AI')
+          .replace(/Liquid Foundation Model/gi, 'Resence AI Engine')
+          .replace(/\bLFM\b/g, 'Resence AI')
+          .trim();
+
+        if (!fullAiText) {
           if (fallbackReasoning.trim()) {
-            fullAiText = fallbackReasoning;
+            fullAiText = fallbackReasoning.replace(/User Safety:\s*safe/gi, '').trim();
           } else {
-            fullAiText = "I am Resence AI, your sovereign assistant. Connected and ready across the Resence ecosystem.";
+            fullAiText = "Main Resence AI companion hoon, Resence ecosystem ka sovereign assistant. Btaiye aaj kya kaam karein?";
           }
-          textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
         }
+        textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
 
         const aiMsgObj = {
           id: 'msg_' + Date.now(),
@@ -2222,13 +2243,15 @@
       } catch (err) {
         console.warn("AI Chat error:", err);
         const promptLower = prompt.toLowerCase();
-        let reply = "I am Resence AI, sovereign companion for WeResence. All systems operational.";
-        if (promptLower.includes('hi') || promptLower.includes('hello') || promptLower.includes('hey')) {
-          reply = "Hey! Great to connect with you on WeResence. How can I assist you with your sovereign communications or tasks today?";
-        } else if (promptLower.includes('who are you') || promptLower.includes('what are you')) {
-          reply = "I am Resence AI, native sovereign artificial intelligence built for the Resence ecosystem founded by Piyush Singh.";
+        let reply = "Main Resence AI companion hoon, Resence ecosystem ka sovereign intelligence assistant. Sabhi encrypted systems active hain.";
+        if (promptLower.includes('kese') || promptLower.includes('kaise') || promptLower.includes('how are')) {
+          reply = "Main bilkul theek hoon! Resence ecosystem me aapke communications aur tasks automate karne ke liye taiyar hoon. Aap btaiye?";
+        } else if (promptLower.includes('hi') || promptLower.includes('hello') || promptLower.includes('hey')) {
+          reply = "Namaste! Great to connect with you on WeResence. Aaj kya plan hai?";
+        } else if (promptLower.includes('who are you') || promptLower.includes('kaun ho') || promptLower.includes('liquid')) {
+          reply = "Main Resence AI hoon — Resence ecosystem (founded by Piyush Singh) ka official sovereign companion.";
         } else {
-          reply = `Understood: "${prompt}". Sovereign encrypted AI channel is listening and active.`;
+          reply = `Message received: "${prompt}". Resence AI channel active hai.`;
         }
         textSpan.innerHTML = reply;
 
