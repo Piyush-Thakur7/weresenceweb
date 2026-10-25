@@ -326,7 +326,7 @@
                 <span>🔒</span>
                 <div>
                   <p class="font-semibold text-white text-white text-[11px]">Secret Vault (Ghost PIN)</p>
-                  <p class="text-[10px] text-slate-400">Master: 1234 | Decoy: 0000</p>
+                  <p class="text-[10px] text-slate-400">Master: 1234 (Chats) | Decoy: 0000 (ai.resence.in)</p>
                 </div>
               </div>
               <span class="text-slate-400 text-xs">›</span>
@@ -1062,16 +1062,71 @@
       }
     }
 
-    // Ghost PIN & Settings
+    // Ghost PIN & Camouflage Mode (ai.resence.in Integration)
+    let isCamouflageMode = false;
+
     function promptGhostPin() {
-      const pin = prompt("Enter Vault PIN (Default Master: 1234, Decoy: 0000):", "1234");
+      const pin = prompt("Enter PIN (Master: 1234, Camouflage Decoy: 0000):", isCamouflageMode ? "1234" : "0000");
       if (pin === "0000") {
-        alert("Decoy PIN entered. Dummy decoy workspace unlocked (True chats remain completely hidden).");
+        activateCamouflageAiMode();
       } else if (pin === "1234") {
-        alert("Master PIN verified. Sovereign vault unlocked.");
+        restoreSovereignMessenger();
       } else if (pin) {
         alert("Incorrect PIN.");
       }
+    }
+
+    function activateCamouflageAiMode() {
+      isCamouflageMode = true;
+      document.getElementById('mockChatTitle').textContent = "Resence AI (ai.resence.in)";
+      document.getElementById('mockChatStatus').textContent = "Career, Study & Multimodal Assistant";
+      document.getElementById('mockChatStatus').className = "text-[10px] text-cyan-400 mt-0.5 font-medium";
+
+      // Hide Messenger navigation tabs and show only AI workspace pill
+      const nav = document.querySelector('#interactive-demo nav');
+      if (nav) {
+        nav.innerHTML = `
+          <div class="w-full py-1 text-center text-[10px] font-mono text-cyan-400 font-semibold flex items-center justify-center gap-1.5">
+            <span>🛡️ Camouflage Mode Active:</span>
+            <span class="text-white">ai.resence.in</span>
+            <button onclick="promptGhostPin()" class="ml-2 px-2 py-0.5 rounded-full bg-white/10 text-[9px] text-slate-300 hover:text-white">Exit (PIN)</button>
+          </div>
+        `;
+      }
+
+      const feed = document.getElementById('mockChatFeed');
+      feed.innerHTML = `
+        <div class="flex justify-center my-1">
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-cyan-500/10 text-cyan-300 font-medium border border-cyan-500/20">
+            🤖 Resence AI Active (ai.resence.in) • Zero Chats Visible
+          </span>
+        </div>
+        <div class="flex items-start gap-2.5 my-2">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white text-xs font-bold flex items-center justify-center shadow-md">
+            AI
+          </div>
+          <div class="max-w-[80%] p-3.5 rounded-2xl rounded-tl-none bg-white/5 text-slate-200 border border-white/5 space-y-2">
+            <p class="font-semibold text-white">Hello! I'm Resence AI.</p>
+            <p class="text-xs text-slate-300">Your personal career, study & intelligence companion powered by <b>ai.resence.in</b>.</p>
+            <div class="pt-1 flex flex-wrap gap-1.5 text-[10px]">
+              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Explain Feynman technique')">💡 Feynman Technique</span>
+              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Review my study roadmap')">📚 Study Roadmap</span>
+              <span class="px-2 py-1 rounded-lg bg-white/10 text-cyan-300 cursor-pointer hover:bg-white/15" onclick="sendAiSample('Search free APIs')">🔍 Free APIs</span>
+            </div>
+          </div>
+        </div>
+      `;
+      alert("🛡️ Camouflage Decoy Mode Active!\n\nThe app has transformed into the harmless 'Resence AI' (ai.resence.in) assistant.\nAll chats, phonebooks, mutual vaults, and offline SMS have vanished completely.\n\nTo return to authentic WeResence, tap 'Exit (PIN)' or Vault and enter Master PIN (1234).");
+    }
+
+    function sendAiSample(promptText) {
+      document.getElementById('mockInput').value = promptText;
+      document.querySelector('#mockInputBar form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+
+    function restoreSovereignMessenger() {
+      isCamouflageMode = false;
+      location.reload();
     }
     function editBio() {
       const current = document.getElementById('bioText').textContent;
