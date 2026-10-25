@@ -135,7 +135,7 @@
   <!-- ========================================== -->
   <!-- 1. MULTI-STEP AUTHENTICATION VIEW          -->
   <!-- ========================================== -->
-  <div id="viewAuth" class="relative h-full w-full overflow-y-auto no-scrollbar flex flex-col items-center justify-center p-4 z-20">
+  <div id="viewAuth" class="hidden relative h-full w-full overflow-y-auto no-scrollbar flex flex-col items-center justify-center p-4 z-20">
     <div class="absolute top-0 left-0 right-0 h-96 ambient-glow pointer-events-none"></div>
 
     <div class="w-full max-w-md glass-panel p-6 sm:p-8 rounded-[32px] relative z-10 shadow-2xl border border-white/10">
@@ -427,6 +427,9 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button onclick="promptDeleteCurrentChat()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-red-400 hover:bg-red-500/20 text-xs transition-all" title="Delete / Clear Chat">
+            🗑️
+          </button>
           <button onclick="handleHeaderPeerClick()" class="w-8 h-8 rounded-full glass-input flex items-center justify-center text-slate-300 hover:text-white text-xs transition-all" title="Contact Details">
             ℹ️
           </button>
@@ -611,6 +614,13 @@
           <button onclick="closePeerProfileModal(); openMutualVaultModal();" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 active:scale-95">
             <span>Access Secret Vault</span>
             <span>🔒</span>
+          </button>
+        </div>
+
+        <!-- Delete Chat Action in Contact Profile -->
+        <div class="pt-2">
+          <button onclick="closePeerProfileModal(); promptDeleteCurrentChat();" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs transition-all flex items-center justify-center gap-2">
+            <span>🗑️ Delete Conversation & Wipe Encrypted History</span>
           </button>
         </div>
       </div>
@@ -889,28 +899,10 @@
     let isSimulatingOffline = false;
     let deferredPwaPrompt = null;
 
-    // 4. PWA REGISTRATION (INSTANT AUTO-UPDATE & CACHE-BUST)
+    // 4. PWA REGISTRATION (CLEAN, SMOOTH - NO REFRESH LOOPS)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let registration of registrations) {
-          registration.update();
-        }
-      });
-
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=' + Date.now()).then(registration => {
-          registration.onupdatefound = () => {
-            const installingWorker = registration.installing;
-            if (installingWorker) {
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version detected: reload immediately to show fresh UI
-                  window.location.reload();
-                }
-              };
-            }
-          };
-        }).catch(err => console.log('SW registration error:', err));
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration note:', err));
       });
     }
 
@@ -1429,6 +1421,12 @@
           else if (lastMsg.text) previewText = lastMsg.text;
         }
 
+        const deleteBtnMarkup = (thread.id !== 'ai-companion')
+          ? `<button onclick="event.stopPropagation(); deleteThreadById('${thread.id}', '${thread.name}')" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-all flex-shrink-0" title="Delete conversation">🗑️</button>`
+          : `<button onclick="event.stopPropagation(); clearAiChatHistory()" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all flex-shrink-0" title="Clear AI messages">🧹</button>`;
+
+        div.className = `p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors group relative ${isActive ? 'bg-white/5' : ''}`;
+
         div.innerHTML = `
           ${avatarMarkup}
           <div class="flex-1 min-w-0">
@@ -1438,6 +1436,7 @@
             </div>
             <p class="text-[11px] text-slate-400 truncate mt-0.5">${previewText}</p>
           </div>
+          ${deleteBtnMarkup}
         `;
         container.appendChild(div);
       });
@@ -1452,6 +1451,59 @@
         `;
         container.appendChild(cta);
       }
+    }
+
+    function promptDeleteCurrentChat() {
+      const current = getThreadById(activeThreadId);
+      if (!current) return;
+      if (current.id === 'ai-companion') {
+        clearAiChatHistory();
+      } else {
+        deleteThreadById(current.id, current.name);
+      }
+    }
+
+    async function deleteThreadById(threadId, threadName) {
+      if (!confirm(`Are you sure you want to delete the chat with "${threadName}"? This will permanently erase all messages in this conversation.`)) {
+        return;
+      }
+
+      // 1. Remove from local customThreads
+      customThreads = customThreads.filter(t => t.id !== threadId);
+      localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
+
+      // 2. Remove from local threadMessages
+      delete threadMessages[threadId];
+      localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+
+      // 3. Delete from Supabase if connected
+      if (dbClient) {
+        try {
+          await dbClient.from('messages').delete().eq('conversation_id', threadId);
+        } catch (e) {
+          console.warn("DB delete note:", e);
+        }
+      }
+
+      // 4. Switch to default AI companion if the active thread was deleted
+      if (activeThreadId === threadId) {
+        selectThread('ai-companion');
+      }
+
+      renderConversationsList();
+      showAlert(`Chat with ${threadName} deleted.`, 'info');
+    }
+
+    function clearAiChatHistory() {
+      if (!confirm("Clear all messages with Resence AI Companion?")) return;
+      threadMessages['ai-companion'] = [
+        { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Encrypted", time: "Just now" }
+      ];
+      localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+      if (activeThreadId === 'ai-companion') {
+        loadMessagesForThread('ai-companion');
+      }
+      showAlert("Resence AI messages cleared.", "info");
     }
 
     let aiMessengerMode = false;
@@ -1914,8 +1966,12 @@
         </div>
       `;
 
-      // 1. Render local cached messages for this thread
-      const msgs = threadMessages[threadId] || [];
+      // 1. Render local cached messages for this thread (cleanse rogue AI bubbles in peer chats)
+      let msgs = threadMessages[threadId] || [];
+      if (threadId !== 'ai-companion') {
+        msgs = msgs.filter(m => m.type !== 'ai');
+        threadMessages[threadId] = msgs;
+      }
       msgs.forEach(msg => {
         renderSingleMessageBubble(msg);
       });
@@ -2007,22 +2063,46 @@
 
       // Only push peer-to-peer messages to Supabase (AI companion is private and local)
       if (dbClient && currentUserProfile && activeThreadId !== 'ai-companion') {
-        const activeThread = getThreadById(activeThreadId);
+        const currentConvId = activeThreadId;
+        const activeThread = getThreadById(currentConvId);
         const recipient = activeThread ? (activeThread.phone || activeThread.handle || activeThread.id) : null;
-        const sender = currentUserProfile.phone || currentUserProfile.id || 'user';
+        const sender = currentUserProfile.id || 'founder-piyush';
 
-        dbClient.from('messages').insert({
-          conversation_id: activeThreadId,
-          sender_id: sender,
-          recipient_id: recipient,
-          encrypted_payload: msg.text || msg.file_name || 'Encrypted Attachment',
-          message_type: msg.message_type || 'TEXT',
-          media_url: msg.media_url || null,
-          media_caption: msg.file_name || null,
-          transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
-          delivery_status: 'DELIVERED',
-          created_at: new Date().toISOString()
-        }).then(() => {}).catch(e => console.warn("Supabase message insert note:", e));
+        // 1. Ensure sender profile exists in profiles table and conversation exists in conversations table (Foreign Key safety)
+        const ensureProfile = dbClient.from('profiles').upsert({
+          id: sender,
+          phone: currentUserProfile.phone || null,
+          email: currentUserProfile.email || null,
+          display_name: currentUserProfile.display_name || 'WeResence User',
+          resence_id: currentUserProfile.resence_id || '@user',
+          avatar_url: currentUserProfile.avatar_url || null,
+          bio: currentUserProfile.bio || 'Available on WeResence',
+          last_seen: new Date().toISOString()
+        });
+
+        const ensureConv = dbClient.from('conversations').upsert({
+          id: currentConvId,
+          is_group: false,
+          updated_at: new Date().toISOString()
+        });
+
+        Promise.all([ensureProfile, ensureConv]).then(() => {
+          // 2. Insert message with guaranteed foreign key match!
+          return dbClient.from('messages').insert({
+            conversation_id: currentConvId,
+            sender_id: sender,
+            recipient_id: recipient,
+            encrypted_payload: msg.text || msg.file_name || 'Encrypted Attachment',
+            message_type: msg.message_type || 'TEXT',
+            media_url: msg.media_url || null,
+            media_caption: msg.file_name || null,
+            transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
+            delivery_status: 'DELIVERED',
+            created_at: new Date().toISOString()
+          });
+        }).then(() => {
+          console.log("Message delivered to Supabase for:", currentConvId);
+        }).catch(e => console.error("Supabase message insert error:", e));
       }
     }
 
@@ -2113,31 +2193,36 @@
     }
 
     async function streamAiResponse(prompt) {
+      const targetThreadId = 'ai-companion';
       const typing = document.getElementById('typingIndicator');
-      if (typing) typing.classList.remove('hidden');
+      if (typing && activeThreadId === targetThreadId) typing.classList.remove('hidden');
 
       const container = document.getElementById('messagesContainer');
-      const aiBubbleWrapper = document.createElement('div');
-      aiBubbleWrapper.className = "flex items-start gap-2.5 max-w-[85%]";
-      aiBubbleWrapper.innerHTML = `
-        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
-          AI
-        </div>
-        <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
-          <div class="ai-text-content leading-relaxed text-xs sm:text-sm"></div>
-          <div class="text-[9px] font-mono text-emerald-400 opacity-70">Resence AI Companion</div>
-        </div>
-      `;
-      container.appendChild(aiBubbleWrapper);
-      const textSpan = aiBubbleWrapper.querySelector('.ai-text-content');
-      textSpan.innerHTML = '<span class="inline-block animate-pulse text-emerald-400 font-mono text-xs">Resence AI thinking...</span>';
-      container.scrollTop = container.scrollHeight;
+      let aiBubbleWrapper = null;
+      let textSpan = null;
+
+      if (activeThreadId === targetThreadId) {
+        aiBubbleWrapper = document.createElement('div');
+        aiBubbleWrapper.className = "flex items-start gap-2.5 max-w-[85%]";
+        aiBubbleWrapper.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm">
+            AI
+          </div>
+          <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
+            <div class="ai-text-content leading-relaxed text-xs sm:text-sm"></div>
+            <div class="text-[9px] font-mono text-emerald-400 opacity-70">Resence AI Companion</div>
+          </div>
+        `;
+        container.appendChild(aiBubbleWrapper);
+        textSpan = aiBubbleWrapper.querySelector('.ai-text-content');
+        textSpan.innerHTML = '<span class="inline-block animate-pulse text-emerald-400 font-mono text-xs">Resence AI thinking...</span>';
+        container.scrollTop = container.scrollHeight;
+      }
 
       let fullAiText = '';
-      let fallbackReasoning = '';
 
       // Build conversation context history so Resence AI remembers previous exchanges
-      const contextMsgs = (threadMessages['ai-companion'] || []).slice(-6).map(m => ({
+      const contextMsgs = (threadMessages[targetThreadId] || []).slice(-6).map(m => ({
         role: m.type === 'outgoing' ? 'user' : 'assistant',
         content: m.text || ''
       }));
@@ -2175,20 +2260,20 @@
                 try {
                   const parsed = JSON.parse(dataStr);
                   const delta = parsed.choices?.[0]?.delta;
-                  if (delta) {
-                    let cleanDelta = (delta.content || '')
+                  // ONLY take delta.content — completely ignore delta.reasoning
+                  if (delta && delta.content) {
+                    let cleanDelta = delta.content
                       .replace(/User Safety:\s*safe/gi, '')
                       .replace(/User Safety:\s*unsafe/gi, '')
                       .replace(/Liquid AI/gi, 'Resence AI')
                       .replace(/Liquid Foundation Model/gi, 'Resence AI Engine')
-                      .replace(/\bLFM\b/g, 'Resence AI');
+                      .replace(/\bLFM\b/g, 'Resence AI')
+                      .replace(/\bJane\b/g, 'Resence AI');
 
-                    if (cleanDelta) {
-                      fullAiText += cleanDelta;
+                    fullAiText += cleanDelta;
+                    if (textSpan && activeThreadId === targetThreadId) {
                       textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
                       container.scrollTop = container.scrollHeight;
-                    } else if (delta.reasoning && !fullAiText) {
-                      fallbackReasoning += delta.reasoning;
                     }
                   }
                 } catch (e) {}
@@ -2211,22 +2296,23 @@
           }
         }
 
+        // Clean out any thinking scratchpads or foreign references
         fullAiText = fullAiText
+          .replace(/Here's a thinking process:[\s\S]*?(?=(?:Hey|Hello|Namaste|Main|Aap|I'm|\n\n[A-Z]))/gi, '')
           .replace(/User Safety:\s*safe/gi, '')
           .replace(/User Safety:\s*unsafe/gi, '')
           .replace(/Liquid AI/gi, 'Resence AI')
           .replace(/Liquid Foundation Model/gi, 'Resence AI Engine')
           .replace(/\bLFM\b/g, 'Resence AI')
+          .replace(/\bJane\b/g, 'Resence AI')
           .trim();
 
         if (!fullAiText) {
-          if (fallbackReasoning.trim()) {
-            fullAiText = fallbackReasoning.replace(/User Safety:\s*safe/gi, '').trim();
-          } else {
-            fullAiText = "Main Resence AI companion hoon, Resence ecosystem ka sovereign assistant. Btaiye aaj kya kaam karein?";
-          }
+          fullAiText = "Main Resence AI companion hoon, Resence ecosystem ka sovereign assistant. Btaiye aaj kya kaam karein?";
         }
-        textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
+        if (textSpan && activeThreadId === targetThreadId) {
+          textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
+        }
 
         const aiMsgObj = {
           id: 'msg_' + Date.now(),
@@ -2236,8 +2322,8 @@
           transport: 'Resence AI Core',
           time: 'Just now'
         };
-        if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
-        threadMessages[activeThreadId].push(aiMsgObj);
+        if (!threadMessages[targetThreadId]) threadMessages[targetThreadId] = [];
+        threadMessages[targetThreadId].push(aiMsgObj);
         localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
 
       } catch (err) {
@@ -2248,12 +2334,14 @@
           reply = "Main bilkul theek hoon! Resence ecosystem me aapke communications aur tasks automate karne ke liye taiyar hoon. Aap btaiye?";
         } else if (promptLower.includes('hi') || promptLower.includes('hello') || promptLower.includes('hey')) {
           reply = "Namaste! Great to connect with you on WeResence. Aaj kya plan hai?";
-        } else if (promptLower.includes('who are you') || promptLower.includes('kaun ho') || promptLower.includes('liquid')) {
+        } else if (promptLower.includes('who are you') || promptLower.includes('kaun ho') || promptLower.includes('liquid') || promptLower.includes('jane')) {
           reply = "Main Resence AI hoon — Resence ecosystem (founded by Piyush Singh) ka official sovereign companion.";
         } else {
           reply = `Message received: "${prompt}". Resence AI channel active hai.`;
         }
-        textSpan.innerHTML = reply;
+        if (textSpan && activeThreadId === targetThreadId) {
+          textSpan.innerHTML = reply;
+        }
 
         const aiMsgObj = {
           id: 'msg_' + Date.now(),
@@ -2263,13 +2351,13 @@
           transport: 'Resence AI Core',
           time: 'Just now'
         };
-        if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
-        threadMessages[activeThreadId].push(aiMsgObj);
+        if (!threadMessages[targetThreadId]) threadMessages[targetThreadId] = [];
+        threadMessages[targetThreadId].push(aiMsgObj);
         localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
 
       } finally {
-        if (typing) typing.classList.add('hidden');
-        container.scrollTop = container.scrollHeight;
+        if (typing && activeThreadId === targetThreadId) typing.classList.add('hidden');
+        if (container && activeThreadId === targetThreadId) container.scrollTop = container.scrollHeight;
       }
     }
 
@@ -2411,6 +2499,55 @@
         console.warn("Sync conversations note:", err);
       }
     }
+
+    async function pollActiveThreadMessages() {
+      if (!dbClient || !currentUserProfile || activeThreadId === 'ai-companion') return;
+      try {
+        const { data } = await dbClient
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', activeThreadId)
+          .order('created_at', { ascending: true })
+          .limit(50);
+
+        if (data && data.length > 0) {
+          const myId = currentUserProfile.id;
+          const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+          let msgs = threadMessages[activeThreadId] || [];
+          let hasNew = false;
+
+          data.forEach(dbMsg => {
+            const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.created_at === dbMsg.created_at));
+            if (!alreadyExists) {
+              const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
+              const converted = {
+                id: dbMsg.id,
+                type: isMine ? 'outgoing' : 'incoming',
+                message_type: dbMsg.message_type || 'TEXT',
+                text: dbMsg.encrypted_payload,
+                media_url: dbMsg.media_url,
+                file_name: dbMsg.media_caption,
+                transport: dbMsg.transport_mode || 'Encrypted Internet',
+                time: 'Delivered',
+                created_at: dbMsg.created_at
+              };
+              msgs.push(converted);
+              renderSingleMessageBubble(converted);
+              hasNew = true;
+            }
+          });
+
+          if (hasNew) {
+            threadMessages[activeThreadId] = msgs;
+            localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Gentle auto-polling fallbacks for flawless peer messaging on mobile
+    setInterval(pollActiveThreadMessages, 3500);
+    setInterval(syncConversationsFromSupabase, 12000);
 
     function toggleNetworkSimulation() {
       isSimulatingOffline = !isSimulatingOffline;
@@ -2605,12 +2742,17 @@
       const myIdentifier = currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'me';
       const convId = getPeerConversationId(myIdentifier, peerIdentifier);
 
+      // Pre-provision conversation in Supabase to satisfy foreign keys
+      if (dbClient) {
+        dbClient.from('conversations').upsert({ id: convId, is_group: false, updated_at: new Date().toISOString() }).then(() => {}).catch(() => {});
+      }
+
       let existing = customThreads.find(t => t.id === convId);
       if (!existing) {
         existing = {
           id: convId,
           name: user.display_name || user.phone || 'WeResence Contact',
-          handle: user.resence_id || `@${(user.phone || '').replace(/\D/g, '')}`,
+          handle: user.resence_id || `@${(user.phone || '').replace(/\D/g, '').slice(-10)}`,
           avatar: '👤',
           avatarImg: user.avatar_url || null,
           type: '1ON1',
@@ -2643,55 +2785,70 @@
         return;
       }
 
+      // Check if user exists in Supabase profiles by phone digits, name, or handle
+      let matchedUser = null;
+      if (dbClient) {
+        try {
+          const filterQueries = [];
+          if (inputClean.length >= 6) filterQueries.push(`phone.ilike.%${inputClean}%`);
+          filterQueries.push(`resence_id.ilike.%${peerInput.replace('@','')}%`);
+          filterQueries.push(`display_name.ilike.%${peerInput}%`);
+
+          const { data } = await dbClient
+            .from('profiles')
+            .select('*')
+            .or(filterQueries.join(','))
+            .maybeSingle();
+
+          matchedUser = data;
+        } catch (e) {}
+      }
+
+      let peerPhone = peerInput;
+      let peerName = nameInput || peerInput;
+      let peerAvatarImg = null;
+      let peerBio = 'Available on WeResence';
+
+      if (matchedUser) {
+        peerPhone = matchedUser.phone || peerInput;
+        peerName = matchedUser.display_name || peerName;
+        peerAvatarImg = matchedUser.avatar_url || null;
+        peerBio = matchedUser.bio || peerBio;
+      }
+
       const myIdentifier = currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'me';
-      const convId = getPeerConversationId(myIdentifier, peerInput);
+      const convId = getPeerConversationId(myIdentifier, peerPhone);
+
+      // Upsert into Supabase conversations table to guarantee foreign key constraint is satisfied!
+      if (dbClient) {
+        try {
+          await dbClient.from('conversations').upsert({ id: convId, is_group: false, updated_at: new Date().toISOString() });
+        } catch (e) {}
+      }
 
       // Check if thread already exists
-      const existing = customThreads.find(t => t.id === convId || (t.phone && t.phone.replace(/\D/g, '').slice(-10) === inputClean));
+      const existing = customThreads.find(t => t.id === convId || (t.phone && t.phone.replace(/\D/g, '').slice(-10) === peerPhone.replace(/\D/g, '').slice(-10)));
       if (existing) {
         closeNewChatModal();
         selectThread(existing.id);
         return;
       }
 
-      let peerName = nameInput || peerInput;
-      let peerAvatar = '👤';
-      let peerAvatarImg = null;
-      let peerBio = 'Available on WeResence';
-
-      // Check if user exists in Supabase
-      if (dbClient) {
-        try {
-          const { data } = await dbClient
-            .from('profiles')
-            .select('*')
-            .or(`phone.ilike.%${inputClean}%,resence_id.eq.${peerInput}`)
-            .maybeSingle();
-
-          if (data) {
-            peerName = data.display_name || peerName;
-            peerAvatarImg = data.avatar_url || null;
-            peerBio = data.bio || peerBio;
-          }
-        } catch (e) {}
-      }
-
       const newThread = {
         id: convId,
         name: peerName,
-        handle: peerInput.startsWith('@') ? peerInput : `@${inputClean || peerInput.replace(/[^a-zA-Z0-9]/g, '')}`,
-        avatar: peerAvatar,
+        handle: peerPhone.startsWith('@') ? peerPhone : `@${peerPhone.replace(/\D/g, '').slice(-10) || peerPhone.replace(/[^a-zA-Z0-9]/g, '')}`,
+        avatar: '👤',
         avatarImg: peerAvatarImg,
         type: '1ON1',
         subtitle: 'End-to-End Encrypted',
-        phone: peerInput,
+        phone: peerPhone,
         bio: peerBio
       };
 
       customThreads.unshift(newThread);
       localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
 
-      // Initial welcome message in thread
       if (!threadMessages[convId]) {
         threadMessages[convId] = [
           { id: 'start_' + Date.now(), type: 'incoming', message_type: 'TEXT', text: `Private encrypted channel established with ${peerName}.`, transport: 'End-to-End Encrypted', time: 'Just now' }

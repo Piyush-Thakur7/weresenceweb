@@ -51,13 +51,16 @@ CRITICAL IDENTITY RULES:
       const contentType = response.headers.get('content-type') || 'text/plain';
       const text = await response.text();
 
-      // Cleanse unwanted provider leakage and safety debug tags
+      // Cleanse unwanted provider leakage, persona tags, and safety debug tags
       let cleaned = text
         .replace(/User Safety:\s*safe/gi, '')
         .replace(/User Safety:\s*unsafe/gi, '')
         .replace(/Liquid AI/gi, 'Resence AI')
         .replace(/Liquid Foundation Model/gi, 'Resence AI Engine')
-        .replace(/\bLFM\b/g, 'Resence AI');
+        .replace(/\bLFM\b/g, 'Resence AI')
+        .replace(/I'm Jane/gi, "I'm Resence AI")
+        .replace(/I am Jane/gi, "I am Resence AI")
+        .replace(/\bJane\b/g, 'Resence AI');
 
       res.setHeader('Content-Type', contentType);
       return res.status(200).send(cleaned);
