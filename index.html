@@ -2133,32 +2133,40 @@
             .select('*')
             .eq('conversation_id', threadId)
             .order('created_at', { ascending: true })
-            .limit(50);
+            .limit(100);
 
           if (data && data.length > 0) {
             const myId = currentUserProfile.id;
             const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
 
+            // Clean single-source render from cloud database - eliminates any duplicate bubbles!
+            container.innerHTML = `
+              <div class="flex justify-center my-2">
+                <span class="px-3.5 py-1 rounded-full text-[10px] font-mono font-medium bg-white/5 text-slate-400 border border-white/10">
+                  🔒 Private Encrypted Channel
+                </span>
+              </div>
+            `;
+
+            const cleanMsgs = [];
             data.forEach(dbMsg => {
-              const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.created_at === dbMsg.created_at));
-              if (!alreadyExists) {
-                const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
-                const converted = {
-                  id: dbMsg.id,
-                  type: isMine ? 'outgoing' : 'incoming',
-                  message_type: dbMsg.message_type || 'TEXT',
-                  text: dbMsg.encrypted_payload,
-                  media_url: dbMsg.media_url,
-                  file_name: dbMsg.media_caption,
-                  transport: dbMsg.transport_mode || 'Encrypted Internet',
-                  time: formatTime(dbMsg.created_at),
-                  created_at: dbMsg.created_at
-                };
-                msgs.push(converted);
-                renderSingleMessageBubble(converted);
-              }
+              const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
+              const converted = {
+                id: dbMsg.id,
+                type: isMine ? 'outgoing' : 'incoming',
+                message_type: dbMsg.message_type || 'TEXT',
+                text: dbMsg.encrypted_payload,
+                media_url: dbMsg.media_url,
+                file_name: dbMsg.media_caption,
+                transport: dbMsg.transport_mode || 'Encrypted Internet',
+                time: formatTime(dbMsg.created_at),
+                created_at: dbMsg.created_at
+              };
+              cleanMsgs.push(converted);
+              renderSingleMessageBubble(converted);
             });
-            threadMessages[threadId] = msgs;
+
+            threadMessages[threadId] = cleanMsgs;
             localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
           }
         } catch (e) {
@@ -2713,12 +2721,24 @@
           let hasNew = false;
 
           data.forEach(dbMsg => {
-            const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.created_at === dbMsg.created_at));
+            const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
+
+            // CRITICAL: Sender already rendered their own outgoing message! NEVER re-render from poll!
+            if (isMine) {
+              const localMsg = msgs.find(m => m.type === 'outgoing' && m.text === dbMsg.encrypted_payload);
+              if (localMsg && localMsg.id !== dbMsg.id) {
+                localMsg.id = dbMsg.id;
+                hasNew = true;
+              }
+              return;
+            }
+
+            // Only incoming peer messages should be processed by background poll
+            const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.type === 'incoming'));
             if (!alreadyExists) {
-              const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
               const converted = {
                 id: dbMsg.id,
-                type: isMine ? 'outgoing' : 'incoming',
+                type: 'incoming',
                 message_type: dbMsg.message_type || 'TEXT',
                 text: dbMsg.encrypted_payload,
                 media_url: dbMsg.media_url,
