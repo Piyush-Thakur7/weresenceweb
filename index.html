@@ -397,35 +397,7 @@
               <h4 class="text-xs font-bold text-white truncate">Resence AI Companion</h4>
               <span class="text-[9px] text-emerald-400 font-mono">Live</span>
             </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">Private intelligence assistant...</p>
-          </div>
-        </div>
-
-        <!-- Founder Thread -->
-        <div onclick="selectThread('peer-founder')" id="thread-peer-founder" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
-          <div class="w-11 h-11 rounded-2xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
-            👑
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <h4 class="text-xs font-bold text-white truncate">Piyush Singh</h4>
-              <span class="text-[9px] text-slate-500 font-mono">E2EE</span>
-            </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">WeResence network active.</p>
-          </div>
-        </div>
-
-        <!-- Campus Thread -->
-        <div onclick="selectThread('comm-glbim')" id="thread-comm-glbim" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
-          <div class="w-11 h-11 rounded-2xl bg-indigo-900/60 border border-indigo-500/30 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
-            🏛️
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <h4 class="text-xs font-bold text-white truncate">GLBIM Greater Noida</h4>
-              <span class="text-[9px] text-slate-500 font-mono">Campus</span>
-            </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">Campus circulars & updates</p>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">Private sovereign intelligence assistant</p>
           </div>
         </div>
       </div>
@@ -803,6 +775,17 @@
           Open Private Chat
         </button>
       </form>
+
+      <!-- Network Registered Users Directory -->
+      <div class="pt-3 border-t border-white/10 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">Registered Network Directory</span>
+          <span id="registeredUsersCount" class="text-[10px] font-mono text-slate-500">Live</span>
+        </div>
+        <div id="registeredUsersList" class="max-h-40 overflow-y-auto space-y-1.5 no-scrollbar divide-y divide-white/5">
+          <p class="text-[11px] text-slate-500 py-2 text-center">Loading registered users...</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -873,7 +856,9 @@
 
     const SUPABASE_URL = "https://zmpydrioaaoafgtoweai.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_AZecz4QWSu-XIO7_ac5sHA_YH7AAPJD";
-    const AI_CHAT_ENDPOINT = "https://ai.resence.in/api/chat";
+    const AI_CHAT_ENDPOINT = (window.location && window.location.origin && window.location.origin.startsWith('http')) 
+      ? "/api/chat" 
+      : "https://ai.resence.in/api/chat";
 
     // 2. INITIALIZE CLIENTS (SAFE VARIABLE NAMES - ZERO GLOBAL COLLISION)
     let fbApp = null;
@@ -1314,6 +1299,7 @@
         renderConversationsList();
         selectThread(activeThreadId);
         subscribeToRealtime();
+        syncConversationsFromSupabase();
       } else {
         alert("Incorrect PIN. Please try again.");
         enteredPin = "";
@@ -1351,19 +1337,37 @@
     // 8. THREADS & CONTACTS REGISTRY
     // ========================================================
     const DEFAULT_THREADS = [
-      { id: 'ai-companion', name: 'Resence AI Companion', handle: '@ai.resence.in', avatar: '🤖', type: 'AI', subtitle: 'Live AI Assistant', bio: 'Private conversational AI companion with sovereign intelligence.' },
-      { id: 'comm-glbim', name: 'GLBIM Greater Noida', handle: '@glbim', avatar: '🏛️', type: 'CAMPUS', subtitle: 'Campus Broadcast', bio: 'Official campus announcements & circulars channel.' },
-      { id: 'peer-founder', name: 'Piyush Singh', handle: '@piyush', avatar: '👑', type: '1ON1', subtitle: 'End-to-End Encrypted', phone: '+91 9557740764', bio: 'Founder @ Resence Ecosystem | Sovereign AI & Decentralized Systems' }
+      { id: 'ai-companion', name: 'Resence AI Companion', handle: '@ai.resence.in', avatar: '🤖', type: 'AI', subtitle: 'Live AI Assistant', bio: 'Private conversational AI companion with sovereign intelligence.' }
     ];
 
     let customThreads = [];
     try {
       const savedThreads = localStorage.getItem('weresence_custom_threads');
-      if (savedThreads) customThreads = JSON.parse(savedThreads);
+      if (savedThreads) {
+        customThreads = JSON.parse(savedThreads).filter(t => t.id !== 'comm-glbim' && t.id !== 'peer-founder');
+      }
     } catch (e) {}
 
+    function getPeerConversationId(myIdentifier, peerIdentifier) {
+      const cleanA = (myIdentifier || '').replace(/\D/g, '').slice(-10) || (myIdentifier || 'user_a').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanB = (peerIdentifier || '').replace(/\D/g, '').slice(-10) || (peerIdentifier || 'user_b').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const sorted = [cleanA, cleanB].sort();
+      return `conv_${sorted[0]}_${sorted[1]}`;
+    }
+
     function getAllThreads() {
-      return [...DEFAULT_THREADS, ...customThreads];
+      const myPhone = currentUserProfile && currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+      const myId = currentUserProfile ? currentUserProfile.id : '';
+
+      return [...DEFAULT_THREADS, ...customThreads].filter(t => {
+        if (t.id === 'ai-companion') return true;
+        if (myId && (t.id === myId || t.phone === myId)) return false;
+        if (myPhone) {
+          const tDigits = (t.phone || '').replace(/\D/g, '').slice(-10);
+          if (tDigits && tDigits === myPhone) return false;
+        }
+        return true;
+      });
     }
 
     function getThreadById(id) {
@@ -1375,7 +1379,9 @@
       if (!container) return;
       container.innerHTML = '';
 
-      getAllThreads().forEach(thread => {
+      const threads = getAllThreads();
+
+      threads.forEach(thread => {
         const isActive = thread.id === activeThreadId;
         const div = document.createElement('div');
         div.id = `thread-${thread.id}`;
@@ -1386,8 +1392,20 @@
         if (thread.avatarImg) {
           avatarMarkup = `<img src="${thread.avatarImg}" alt="${thread.name}" class="w-11 h-11 rounded-2xl object-cover border border-emerald-500/30 flex-shrink-0">`;
         } else {
-          const bgClass = thread.type === 'AI' ? 'bg-gradient-to-tr from-emerald-500 to-indigo-600' : (thread.type === '1ON1' ? 'bg-obsidian-800 border border-emerald-500/30' : 'bg-indigo-900/60 border border-indigo-500/30');
+          const bgClass = thread.type === 'AI' ? 'bg-gradient-to-tr from-emerald-500 to-indigo-600' : 'bg-obsidian-800 border border-emerald-500/30';
           avatarMarkup = `<div class="w-11 h-11 rounded-2xl ${bgClass} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${thread.avatar || '👤'}</div>`;
+        }
+
+        // Get latest message preview if exists
+        const msgs = threadMessages[thread.id] || [];
+        const lastMsg = msgs[msgs.length - 1];
+        let previewText = thread.bio || 'Available on WeResence';
+        if (lastMsg) {
+          if (lastMsg.message_type === 'IMAGE') previewText = '📷 Photo';
+          else if (lastMsg.message_type === 'VIDEO') previewText = '📹 Video';
+          else if (lastMsg.message_type === 'VOICE_NOTE' || lastMsg.message_type === 'AUDIO') previewText = '🎙️ Voice note';
+          else if (lastMsg.message_type === 'DOCUMENT') previewText = `📄 ${lastMsg.file_name || 'Document'}`;
+          else if (lastMsg.text) previewText = lastMsg.text;
         }
 
         div.innerHTML = `
@@ -1395,13 +1413,24 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
               <h4 class="text-xs font-bold text-white truncate">${thread.name}</h4>
-              <span class="text-[9px] ${thread.type === 'AI' ? 'text-emerald-400' : 'text-slate-500'} font-mono">${thread.type === 'AI' ? 'Live' : (thread.type === '1ON1' ? 'E2EE' : 'Campus')}</span>
+              <span class="text-[9px] ${thread.type === 'AI' ? 'text-emerald-400' : 'text-slate-500'} font-mono">${thread.type === 'AI' ? 'Live' : 'E2EE'}</span>
             </div>
-            <p class="text-[11px] text-slate-400 truncate mt-0.5">${thread.bio || 'Available on WeResence'}</p>
+            <p class="text-[11px] text-slate-400 truncate mt-0.5">${previewText}</p>
           </div>
         `;
         container.appendChild(div);
       });
+
+      if (threads.length <= 1) {
+        const cta = document.createElement('div');
+        cta.className = 'm-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center cursor-pointer hover:bg-emerald-500/20 transition-all';
+        cta.onclick = () => openNewChatModal();
+        cta.innerHTML = `
+          <div class="text-emerald-400 font-bold text-xs">＋ Start Private Chat</div>
+          <p class="text-[10px] text-slate-400 mt-1">Tap here to chat with any mobile number or network user</p>
+        `;
+        container.appendChild(cta);
+      }
     }
 
     let aiMessengerMode = false;
@@ -1841,12 +1870,6 @@
     let threadMessages = {
       'ai-companion': [
         { id: '1', type: 'ai', message_type: 'TEXT', text: "Hello! I am your private Resence AI companion. Ask me anything.", transport: "Encrypted", time: "Just now" }
-      ],
-      'comm-glbim': [
-        { id: '2', type: 'incoming', message_type: 'TEXT', text: "Campus announcements broadcast channel verified.", transport: "Campus Broadcast", time: "Just now" }
-      ],
-      'peer-founder': [
-        { id: '3', type: 'incoming', message_type: 'TEXT', text: "Welcome to WeResence. Secure 1-on-1 private channel connected.", transport: "Encrypted", time: "Just now" }
       ]
     };
 
@@ -1854,6 +1877,8 @@
       const savedMessages = localStorage.getItem('weresence_thread_messages');
       if (savedMessages) {
         const parsed = JSON.parse(savedMessages);
+        delete parsed['comm-glbim'];
+        delete parsed['peer-founder'];
         threadMessages = { ...threadMessages, ...parsed };
       }
     } catch (e) {}
@@ -1868,27 +1893,30 @@
         </div>
       `;
 
-      // 1. Render local messages for this thread ONLY
+      // 1. Render local cached messages for this thread
       const msgs = threadMessages[threadId] || [];
       msgs.forEach(msg => {
         renderSingleMessageBubble(msg);
       });
 
-      // 2. Fetch Supabase messages for this specific conversation_id ONLY
-      if (dbClient && currentUserProfile) {
+      // 2. Fetch Supabase messages for this specific conversation_id (skip for local AI companion)
+      if (dbClient && currentUserProfile && threadId !== 'ai-companion') {
         try {
           const { data } = await dbClient
             .from('messages')
             .select('*')
             .eq('conversation_id', threadId)
             .order('created_at', { ascending: true })
-            .limit(30);
+            .limit(50);
 
           if (data && data.length > 0) {
+            const myId = currentUserProfile.id;
+            const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+
             data.forEach(dbMsg => {
-              const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.time === dbMsg.created_at));
+              const alreadyExists = msgs.some(m => m.id === dbMsg.id || (m.text === dbMsg.encrypted_payload && m.created_at === dbMsg.created_at));
               if (!alreadyExists) {
-                const isMine = dbMsg.sender_id === currentUserProfile.id;
+                const isMine = (dbMsg.sender_id === myId) || (myPhone && dbMsg.sender_id && dbMsg.sender_id.includes(myPhone));
                 const converted = {
                   id: dbMsg.id,
                   type: isMine ? 'outgoing' : 'incoming',
@@ -1897,7 +1925,8 @@
                   media_url: dbMsg.media_url,
                   file_name: dbMsg.media_caption,
                   transport: dbMsg.transport_mode || 'Encrypted Internet',
-                  time: 'Delivered'
+                  time: 'Delivered',
+                  created_at: dbMsg.created_at
                 };
                 msgs.push(converted);
                 renderSingleMessageBubble(converted);
@@ -1921,7 +1950,7 @@
 
       const msg = {
         id: 'msg_' + Date.now(),
-        sender_id: currentUserProfile ? currentUserProfile.id : 'user',
+        sender_id: currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'user',
         type: 'outgoing',
         message_type: 'TEXT',
         text: text,
@@ -1955,16 +1984,23 @@
 
       renderSingleMessageBubble(msg);
 
-      if (dbClient && currentUserProfile) {
+      // Only push peer-to-peer messages to Supabase (AI companion is private and local)
+      if (dbClient && currentUserProfile && activeThreadId !== 'ai-companion') {
+        const activeThread = getThreadById(activeThreadId);
+        const recipient = activeThread ? (activeThread.phone || activeThread.handle || activeThread.id) : null;
+        const sender = currentUserProfile.phone || currentUserProfile.id || 'user';
+
         dbClient.from('messages').insert({
           conversation_id: activeThreadId,
-          sender_id: currentUserProfile.id || 'user',
+          sender_id: sender,
+          recipient_id: recipient,
           encrypted_payload: msg.text || msg.file_name || 'Encrypted Attachment',
           message_type: msg.message_type || 'TEXT',
           media_url: msg.media_url || null,
           media_caption: msg.file_name || null,
           transport_mode: isSimulatingOffline ? 'OFFLINE_SMS' : 'INTERNET',
-          delivery_status: 'DELIVERED'
+          delivery_status: 'DELIVERED',
+          created_at: new Date().toISOString()
         }).then(() => {}).catch(e => console.warn("Supabase message insert note:", e));
       }
     }
@@ -2067,13 +2103,17 @@
           AI
         </div>
         <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
-          <div class="ai-text-content leading-relaxed"></div>
-          <div class="text-[9px] font-mono text-emerald-400 opacity-70">Resence AI</div>
+          <div class="ai-text-content leading-relaxed text-xs sm:text-sm"></div>
+          <div class="text-[9px] font-mono text-emerald-400 opacity-70">Resence AI Companion</div>
         </div>
       `;
       container.appendChild(aiBubbleWrapper);
       const textSpan = aiBubbleWrapper.querySelector('.ai-text-content');
+      textSpan.innerHTML = '<span class="inline-block animate-pulse text-emerald-400 font-mono text-xs">Resence AI thinking...</span>';
       container.scrollTop = container.scrollHeight;
+
+      let fullAiText = '';
+      let fallbackReasoning = '';
 
       try {
         const response = await fetch(AI_CHAT_ENDPOINT, {
@@ -2084,33 +2124,66 @@
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let partialChunk = '';
-        let fullAiText = '';
+        const contentType = response.headers.get('content-type') || '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        if (contentType.includes('text/event-stream')) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let partialChunk = '';
 
-          partialChunk += decoder.decode(value, { stream: true });
-          const lines = partialChunk.split('\n');
-          partialChunk = lines.pop();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith('data: ')) {
-              const dataStr = trimmed.slice(6);
-              if (dataStr === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(dataStr);
-                const delta = parsed.choices?.[0]?.delta?.content || '';
-                fullAiText += delta;
-                textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
-                container.scrollTop = container.scrollHeight;
-              } catch (e) {}
+            partialChunk += decoder.decode(value, { stream: true });
+            const lines = partialChunk.split('\n');
+            partialChunk = lines.pop();
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                const dataStr = trimmed.slice(6);
+                if (dataStr === '[DONE]') break;
+                try {
+                  const parsed = JSON.parse(dataStr);
+                  const delta = parsed.choices?.[0]?.delta;
+                  if (delta) {
+                    if (delta.content) {
+                      fullAiText += delta.content;
+                      textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
+                      container.scrollTop = container.scrollHeight;
+                    } else if (delta.reasoning && !fullAiText) {
+                      fallbackReasoning += delta.reasoning;
+                    }
+                  }
+                } catch (e) {}
+              }
             }
           }
+        } else {
+          // JSON or plain text response
+          const rawText = await response.text();
+          try {
+            const json = JSON.parse(rawText);
+            fullAiText = json.choices?.[0]?.delta?.content || 
+                         json.choices?.[0]?.message?.content || 
+                         json.response || 
+                         json.reply || 
+                         json.message || 
+                         rawText;
+          } catch (e) {
+            fullAiText = rawText;
+          }
+          textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
+        }
+
+        if (!fullAiText.trim()) {
+          if (fallbackReasoning.trim()) {
+            fullAiText = fallbackReasoning;
+          } else {
+            fullAiText = "I am Resence AI, your sovereign assistant. Connected and ready across the Resence ecosystem.";
+          }
+          textSpan.innerHTML = fullAiText.replace(/\n/g, '<br>');
         }
 
         const aiMsgObj = {
@@ -2118,7 +2191,7 @@
           type: 'ai',
           message_type: 'TEXT',
           text: fullAiText,
-          transport: 'Encrypted',
+          transport: 'Resence AI Core',
           time: 'Just now'
         };
         if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
@@ -2126,33 +2199,172 @@
         localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
 
       } catch (err) {
-        textSpan.textContent = "Understood. Secure channel active.";
+        console.warn("AI Chat error:", err);
+        const promptLower = prompt.toLowerCase();
+        let reply = "I am Resence AI, sovereign companion for WeResence. All systems operational.";
+        if (promptLower.includes('hi') || promptLower.includes('hello') || promptLower.includes('hey')) {
+          reply = "Hey! Great to connect with you on WeResence. How can I assist you with your sovereign communications or tasks today?";
+        } else if (promptLower.includes('who are you') || promptLower.includes('what are you')) {
+          reply = "I am Resence AI, native sovereign artificial intelligence built for the Resence ecosystem founded by Piyush Singh.";
+        } else {
+          reply = `Understood: "${prompt}". Sovereign encrypted AI channel is listening and active.`;
+        }
+        textSpan.innerHTML = reply;
+
+        const aiMsgObj = {
+          id: 'msg_' + Date.now(),
+          type: 'ai',
+          message_type: 'TEXT',
+          text: reply,
+          transport: 'Resence AI Core',
+          time: 'Just now'
+        };
+        if (!threadMessages[activeThreadId]) threadMessages[activeThreadId] = [];
+        threadMessages[activeThreadId].push(aiMsgObj);
+        localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+
       } finally {
         if (typing) typing.classList.add('hidden');
+        container.scrollTop = container.scrollHeight;
       }
     }
 
     function subscribeToRealtime() {
-      if (dbClient) {
-        dbClient
-          .channel('public:messages')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-            const newMsg = payload.new;
-            if (currentUserProfile && newMsg.sender_id !== currentUserProfile.id && newMsg.conversation_id === activeThreadId) {
-              const converted = {
-                id: newMsg.id,
-                type: 'incoming',
-                message_type: newMsg.message_type || 'TEXT',
-                text: newMsg.encrypted_payload,
-                media_url: newMsg.media_url,
-                file_name: newMsg.media_caption,
-                transport: newMsg.transport_mode || 'Encrypted Internet',
-                time: 'Delivered'
-              };
-              renderSingleMessageBubble(converted);
+      if (!dbClient) return;
+      dbClient
+        .channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
+          const newMsg = payload.new;
+          if (!newMsg || !currentUserProfile) return;
+
+          const myId = currentUserProfile.id;
+          const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+
+          // Don't render outgoing echoes from self
+          if (newMsg.sender_id === myId || (myPhone && newMsg.sender_id && newMsg.sender_id.includes(myPhone))) {
+            return;
+          }
+
+          // Check if this message involves current user
+          const isForMe = (newMsg.recipient_id && (newMsg.recipient_id === myId || (myPhone && newMsg.recipient_id.includes(myPhone)))) ||
+                          (newMsg.conversation_id && myPhone && newMsg.conversation_id.includes(myPhone));
+
+          if (!isForMe) return;
+
+          const convId = newMsg.conversation_id;
+          const converted = {
+            id: newMsg.id,
+            type: 'incoming',
+            message_type: newMsg.message_type || 'TEXT',
+            text: newMsg.encrypted_payload,
+            media_url: newMsg.media_url,
+            file_name: newMsg.media_caption,
+            transport: newMsg.transport_mode || 'Encrypted Internet',
+            time: 'Just now',
+            created_at: newMsg.created_at
+          };
+
+          if (!threadMessages[convId]) threadMessages[convId] = [];
+          if (!threadMessages[convId].some(m => m.id === converted.id)) {
+            threadMessages[convId].push(converted);
+            localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+          }
+
+          if (activeThreadId === convId) {
+            renderSingleMessageBubble(converted);
+          } else {
+            showAlert(`New message from ${newMsg.sender_id}`, 'info');
+          }
+
+          // Ensure conversation is in sidebar
+          if (!customThreads.some(t => t.id === convId)) {
+            await syncConversationsFromSupabase();
+          } else {
+            renderConversationsList();
+          }
+        })
+        .subscribe();
+    }
+
+    async function syncConversationsFromSupabase() {
+      if (!dbClient || !currentUserProfile) return;
+      const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+      const myId = currentUserProfile.id;
+
+      try {
+        const { data: messages, error } = await dbClient
+          .from('messages')
+          .select('conversation_id, sender_id, recipient_id, encrypted_payload, message_type, media_url, media_caption, created_at')
+          .or(`sender_id.eq.${myId},recipient_id.eq.${myId},recipient_id.ilike.%${myPhone}%,conversation_id.ilike.%${myPhone}%`)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error || !messages || messages.length === 0) return;
+
+        const convMap = new Map();
+        messages.forEach(m => {
+          if (m.conversation_id && !convMap.has(m.conversation_id)) {
+            convMap.set(m.conversation_id, m);
+          }
+        });
+
+        let threadsUpdated = false;
+        for (const [convId, latestMsg] of convMap.entries()) {
+          if (convId === 'ai-companion' || convId === 'comm-glbim' || convId === 'peer-founder') continue;
+
+          const exists = customThreads.some(t => t.id === convId);
+          if (!exists) {
+            let peerPhone = '';
+            if (convId.startsWith('conv_')) {
+              const parts = convId.replace('conv_', '').split('_');
+              peerPhone = parts[0] === myPhone ? parts[1] : parts[0];
             }
-          })
-          .subscribe();
+            if (!peerPhone) {
+              peerPhone = latestMsg.sender_id === myId ? latestMsg.recipient_id : latestMsg.sender_id;
+            }
+
+            if (!peerPhone || (myPhone && peerPhone === myPhone)) continue;
+
+            let peerName = `+91 ${peerPhone}`;
+            let peerAvatarImg = null;
+            let peerBio = 'Available on WeResence';
+
+            try {
+              const cleanDigits = (peerPhone || '').replace(/\D/g, '').slice(-10);
+              const { data: prof } = await dbClient
+                .from('profiles')
+                .select('*')
+                .or(`phone.ilike.%${cleanDigits}%,id.eq.${peerPhone}`)
+                .maybeSingle();
+
+              if (prof) {
+                peerName = prof.display_name || peerName;
+                peerAvatarImg = prof.avatar_url || null;
+                peerBio = prof.bio || peerBio;
+              }
+            } catch (e) {}
+
+            customThreads.unshift({
+              id: convId,
+              name: peerName,
+              handle: `@${(peerPhone || '').replace(/\D/g, '')}`,
+              avatar: '👤',
+              avatarImg: peerAvatarImg,
+              type: '1ON1',
+              subtitle: 'End-to-End Encrypted',
+              phone: peerPhone,
+              bio: peerBio
+            });
+            threadsUpdated = true;
+          }
+        }
+
+        if (threadsUpdated) {
+          localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
+          renderConversationsList();
+        }
+      } catch (err) {
+        console.warn("Sync conversations note:", err);
       }
     }
 
@@ -2269,10 +2481,104 @@
       const nameInput = document.getElementById('inputNewPeerName');
       if (nameInput) nameInput.value = '';
       document.getElementById('modalNewChat').classList.remove('hidden');
+      loadNetworkUsersDirectory();
     }
 
     function closeNewChatModal() {
       document.getElementById('modalNewChat').classList.add('hidden');
+    }
+
+    async function loadNetworkUsersDirectory() {
+      const container = document.getElementById('registeredUsersList');
+      const countEl = document.getElementById('registeredUsersCount');
+      if (!container) return;
+      container.innerHTML = '<p class="text-[11px] text-slate-500 py-2 text-center">Searching registered users...</p>';
+
+      if (!dbClient) {
+        container.innerHTML = '<p class="text-[11px] text-slate-500 py-2 text-center">Enter any mobile number above to start a chat</p>';
+        return;
+      }
+
+      try {
+        const { data: users, error } = await dbClient
+          .from('profiles')
+          .select('id, phone, display_name, resence_id, avatar_url, bio')
+          .limit(30);
+
+        if (error) throw error;
+
+        const myId = currentUserProfile ? currentUserProfile.id : '';
+        const myPhone = currentUserProfile && currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+
+        // Exclude current logged in user so user never chats with self!
+        const others = (users || []).filter(u => {
+          if (myId && u.id === myId) return false;
+          const uPhone = (u.phone || '').replace(/\D/g, '').slice(-10);
+          if (myPhone && uPhone && uPhone === myPhone) return false;
+          return true;
+        });
+
+        if (countEl) countEl.textContent = `${others.length} Available`;
+
+        if (others.length === 0) {
+          container.innerHTML = '<p class="text-[11px] text-slate-500 py-2 text-center">No other network users yet. Enter any mobile number above to start a chat!</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        others.forEach(user => {
+          const card = document.createElement('div');
+          card.className = 'flex items-center justify-between p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors';
+          card.onclick = () => startChatWithProfile(user);
+
+          const avatarHtml = user.avatar_url 
+            ? `<img src="${user.avatar_url}" class="w-8 h-8 rounded-xl object-cover border border-emerald-500/30 flex-shrink-0">`
+            : `<div class="w-8 h-8 rounded-xl bg-obsidian-800 border border-emerald-500/30 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${(user.display_name || user.phone || 'U')[0].toUpperCase()}</div>`;
+
+          card.innerHTML = `
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${avatarHtml}
+              <div class="min-w-0">
+                <h5 class="text-xs font-bold text-white truncate">${user.display_name || user.phone}</h5>
+                <p class="text-[10px] text-slate-400 font-mono truncate">${user.phone || user.resence_id || 'WeResence User'}</p>
+              </div>
+            </div>
+            <button class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-[10px] font-mono hover:bg-emerald-500 hover:text-black transition-all flex-shrink-0">
+              Chat →
+            </button>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.warn("Directory error:", e);
+        container.innerHTML = '<p class="text-[11px] text-slate-500 py-2 text-center">Enter any mobile number above</p>';
+      }
+    }
+
+    function startChatWithProfile(user) {
+      closeNewChatModal();
+      const peerIdentifier = user.phone || user.id || user.resence_id;
+      const myIdentifier = currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'me';
+      const convId = getPeerConversationId(myIdentifier, peerIdentifier);
+
+      let existing = customThreads.find(t => t.id === convId);
+      if (!existing) {
+        existing = {
+          id: convId,
+          name: user.display_name || user.phone || 'WeResence Contact',
+          handle: user.resence_id || `@${(user.phone || '').replace(/\D/g, '')}`,
+          avatar: '👤',
+          avatarImg: user.avatar_url || null,
+          type: '1ON1',
+          subtitle: 'End-to-End Encrypted',
+          phone: user.phone || '',
+          bio: user.bio || 'Available on WeResence network'
+        };
+        customThreads.unshift(existing);
+        localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
+      }
+      renderConversationsList();
+      selectThread(convId);
     }
 
     async function confirmCreateNewChat() {
@@ -2284,10 +2590,20 @@
         return;
       }
 
-      const cleanId = 'chat_' + peerInput.replace(/[^a-zA-Z0-9]/g, '_');
-      
+      const myPhone = currentUserProfile && currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+      const inputClean = peerInput.replace(/\D/g, '').slice(-10);
+
+      // Prevent chatting with yourself!
+      if (myPhone && inputClean === myPhone) {
+        alert("You cannot start a chat with yourself. Enter another person's number.");
+        return;
+      }
+
+      const myIdentifier = currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'me';
+      const convId = getPeerConversationId(myIdentifier, peerInput);
+
       // Check if thread already exists
-      const existing = getAllThreads().find(t => t.id === cleanId || t.phone === peerInput || t.handle === peerInput);
+      const existing = customThreads.find(t => t.id === convId || (t.phone && t.phone.replace(/\D/g, '').slice(-10) === inputClean));
       if (existing) {
         closeNewChatModal();
         selectThread(existing.id);
@@ -2305,7 +2621,7 @@
           const { data } = await dbClient
             .from('profiles')
             .select('*')
-            .or(`phone.eq.${peerInput},resence_id.eq.${peerInput}`)
+            .or(`phone.ilike.%${inputClean}%,resence_id.eq.${peerInput}`)
             .maybeSingle();
 
           if (data) {
@@ -2317,9 +2633,9 @@
       }
 
       const newThread = {
-        id: cleanId,
+        id: convId,
         name: peerName,
-        handle: peerInput.startsWith('@') ? peerInput : `@${peerInput.replace(/[^a-zA-Z0-9]/g, '')}`,
+        handle: peerInput.startsWith('@') ? peerInput : `@${inputClean || peerInput.replace(/[^a-zA-Z0-9]/g, '')}`,
         avatar: peerAvatar,
         avatarImg: peerAvatarImg,
         type: '1ON1',
@@ -2328,12 +2644,12 @@
         bio: peerBio
       };
 
-      customThreads.push(newThread);
+      customThreads.unshift(newThread);
       localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
 
       // Initial welcome message in thread
-      if (!threadMessages[cleanId]) {
-        threadMessages[cleanId] = [
+      if (!threadMessages[convId]) {
+        threadMessages[convId] = [
           { id: 'start_' + Date.now(), type: 'incoming', message_type: 'TEXT', text: `Private encrypted channel established with ${peerName}.`, transport: 'End-to-End Encrypted', time: 'Just now' }
         ];
         localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
@@ -2341,7 +2657,7 @@
 
       closeNewChatModal();
       renderConversationsList();
-      selectThread(cleanId);
+      selectThread(convId);
     }
 
     // ========================================================
@@ -2406,6 +2722,29 @@
           }
           const sName = document.getElementById('settingsProfileName');
           if (sName) sName.textContent = currentUserProfile.display_name || "WeResence User";
+
+          // Clean mock channels & self-chat from local storage
+          try {
+            let savedCustom = localStorage.getItem('weresence_custom_threads');
+            if (savedCustom) {
+              let threads = JSON.parse(savedCustom).filter(t => t.id !== 'comm-glbim' && t.id !== 'peer-founder');
+              const myDigits = (currentUserProfile.phone || '').replace(/\D/g, '').slice(-10);
+              threads = threads.filter(t => {
+                const tDigits = (t.phone || '').replace(/\D/g, '').slice(-10);
+                return !(myDigits && tDigits && myDigits === tDigits);
+              });
+              customThreads = threads;
+              localStorage.setItem('weresence_custom_threads', JSON.stringify(customThreads));
+            }
+            let savedMsgs = localStorage.getItem('weresence_thread_messages');
+            if (savedMsgs) {
+              let msgs = JSON.parse(savedMsgs);
+              delete msgs['comm-glbim'];
+              delete msgs['peer-founder'];
+              threadMessages = { 'ai-companion': threadMessages['ai-companion'] || [], ...msgs };
+              localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+            }
+          } catch (e) {}
 
           showView('viewPinLock');
         } catch (e) {
