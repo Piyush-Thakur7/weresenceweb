@@ -163,10 +163,15 @@
             </div>
           </div>
 
-          <!-- GHOST MODE PIN BUTTON -->
-          <button onclick="promptGhostPin()" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80">
-            🔒 Vault
-          </button>
+          <!-- HEADER RIGHT CONTROLS: NEW CHAT / CONTACTS & VAULT -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="openContactsModal()" class="w-7 h-7 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-xs transition-colors" title="Start New Chat">
+              ＋
+            </button>
+            <button onclick="promptGhostPin()" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80">
+              🔒 Vault
+            </button>
+          </div>
         </div>
 
         <!-- CHAT MESSAGE FEED -->
@@ -334,6 +339,100 @@
             <span class="text-[9px] mt-0.5">Settings</span>
           </button>
         </nav>
+
+        <!-- CONTACTS & INVITE MODAL OVERLAY (WHATSAPP DISCOVERY) -->
+        <div id="contactsModal" class="hidden absolute inset-0 bg-white dark:bg-[#0D1017] z-30 flex flex-col rounded-[28px] overflow-hidden">
+          <!-- MODAL HEADER -->
+          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white">New Conversation</h3>
+              <p class="text-[10px] text-emerald-500 font-medium">2 contacts on WeResence</p>
+            </div>
+            <button onclick="closeContactsModal()" class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs flex items-center justify-center font-bold hover:opacity-80">
+              ✕
+            </button>
+          </div>
+
+          <!-- SEARCH BAR -->
+          <div class="p-3 border-b border-slate-100 dark:border-slate-800/80">
+            <input type="text" placeholder="Search name or number..." class="w-full bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-white text-xs px-3 py-1.5 rounded-full focus:outline-none">
+          </div>
+
+          <!-- CONTACTS LIST -->
+          <div class="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+            
+            <!-- SECTION 1: REGISTERED WITH RESENCE ID -->
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Contacts on WeResence</p>
+              
+              <div class="space-y-1.5">
+                <div onclick="selectContact('Rahul Sharma', '@rahul', '+91 98111 22233')" class="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center">
+                      R
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Rahul Sharma</p>
+                      <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">@rahul • Available</p>
+                    </div>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">Chat</span>
+                </div>
+
+                <div onclick="selectContact('Aman Verma', '@aman', '+91 98222 33344')" class="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center">
+                      A
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Aman Verma</p>
+                      <p class="text-[10px] text-slate-400">@aman • BCA AI/ML</p>
+                    </div>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">Chat</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: NOT REGISTERED YET (INVITE VIA LINK / WHATSAPP) -->
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Invite to WeResence</p>
+              
+              <div class="space-y-1.5">
+                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between border border-slate-100 dark:border-slate-800/60">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center">
+                      K
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Kunal Singh</p>
+                      <p class="text-[10px] text-slate-400">+91 99444 55566</p>
+                    </div>
+                  </div>
+                  <button onclick="inviteContact('Kunal Singh', '+91 99444 55566')" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-xs">
+                    Invite
+                  </button>
+                </div>
+
+                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between border border-slate-100 dark:border-slate-800/60">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center">
+                      S
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-900 dark:text-white text-[11px] leading-tight">Siddharth Roy</p>
+                      <p class="text-[10px] text-slate-400">+91 99555 66677</p>
+                    </div>
+                  </div>
+                  <button onclick="inviteContact('Siddharth Roy', '+91 99555 66677')" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-xs">
+                    Invite
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
 
       </div>
     </div>
@@ -648,6 +747,44 @@
         chatTitle.textContent = "Profile & Settings";
         chatStatus.textContent = "Phone-Linked Account";
       }
+    }
+
+    function openContactsModal() {
+      document.getElementById('contactsModal').classList.remove('hidden');
+    }
+
+    function closeContactsModal() {
+      document.getElementById('contactsModal').classList.add('hidden');
+    }
+
+    function selectContact(name, handle, phone) {
+      closeContactsModal();
+      switchTab('chats');
+      document.getElementById('mockChatTitle').textContent = `${name} (${handle})`;
+      document.getElementById('mockChatStatus').textContent = isOnline ? "Online • End-to-End Encrypted" : "Offline • SMS Active";
+      
+      const feed = document.getElementById('mockChatFeed');
+      feed.innerHTML = `
+        <div class="flex justify-center my-1">
+          <span class="px-3 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-medium border border-slate-200/60 dark:border-slate-700/60">
+            🔒 Chat with ${name} (${phone}) • Verified WeResence Account
+          </span>
+        </div>
+        <div class="flex items-start gap-2">
+          <div class="w-6 h-6 rounded-full bg-emerald-500 text-[10px] text-slate-950 font-bold flex items-center justify-center flex-shrink-0">
+            ${name[0]}
+          </div>
+          <div class="max-w-[78%] p-3 rounded-2xl rounded-tl-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+            Hey! I saw you are on WeResence too.
+          </div>
+        </div>
+      `;
+    }
+
+    function inviteContact(name, phone) {
+      const inviteMsg = `Hey ${name}, join me on WeResence! Chat privately with anti-screenshot protection, even without internet via offline SMS: https://weresence.resence.in`;
+      navigator.clipboard?.writeText(inviteMsg).catch(() => {});
+      alert(`Invite link copied to clipboard!\n\nMessage:\n"${inviteMsg}"\n\nYou can now paste and send this on WhatsApp, SMS, or Instagram.`);
     }
 
     function editBio() {
