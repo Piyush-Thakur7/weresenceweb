@@ -229,6 +229,74 @@
           </div>
         </div>
 
+        <!-- SETTINGS & PROFILE FEED (HIDDEN INITIALLY) -->
+        <div id="mockSettingsFeed" class="hidden flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+          <!-- PROFILE CARD -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-emerald-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-sm">
+              P
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-bold text-slate-900 dark:text-white text-xs truncate">Piyush Singh</h4>
+              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">+91 98765 43210</p>
+              <p class="text-[10px] text-slate-400 truncate">ResenceID: @piyush</p>
+            </div>
+          </div>
+
+          <!-- SETTINGS LIST -->
+          <div class="space-y-1 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 p-2">
+            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="editBio()">
+              <div class="flex items-center gap-2.5">
+                <span>✏️</span>
+                <div>
+                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Edit Bio & Status</p>
+                  <p id="bioText" class="text-[10px] text-slate-400">Available on WeResence</p>
+                </div>
+              </div>
+              <span class="text-slate-400 text-xs">›</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="toggleGoogleLink()">
+              <div class="flex items-center gap-2.5">
+                <span>🔗</span>
+                <div>
+                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Linked Google Account</p>
+                  <p id="googleLinkStatus" class="text-[10px] text-slate-400">piyush@resence.in (Connected)</p>
+                </div>
+              </div>
+              <span class="text-emerald-500 text-[10px] font-bold">Active</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer" onclick="promptGhostPin()">
+              <div class="flex items-center gap-2.5">
+                <span>🔒</span>
+                <div>
+                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Secret Vault (Ghost PIN)</p>
+                  <p class="text-[10px] text-slate-400">Master: 1234 | Decoy: 0000</p>
+                </div>
+              </div>
+              <span class="text-slate-400 text-xs">›</span>
+            </div>
+
+            <div class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2.5">
+                <span>📶</span>
+                <div>
+                  <p class="font-semibold text-slate-900 dark:text-white text-[11px]">Offline SMS SIM</p>
+                  <p class="text-[10px] text-slate-400">SIM 1 (Jio) • 84/100 used today</p>
+                </div>
+              </div>
+              <span class="text-slate-400 text-xs">›</span>
+            </div>
+          </div>
+
+          <!-- LOGOUT BUTTON -->
+          <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+            <span>🚪</span>
+            <span>Log Out of WeResence</span>
+          </button>
+        </div>
+
         <!-- INPUT BAR -->
         <div id="mockInputBar" class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1017]">
           <form onsubmit="sendMockMessage(event)" class="flex items-center gap-2">
@@ -261,9 +329,9 @@
             <span class="text-sm">🤖</span>
             <span class="text-[9px] mt-0.5">Resence AI</span>
           </button>
-          <button onclick="switchTab('vault')" id="tabVault" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
-            <span class="text-sm">🔒</span>
-            <span class="text-[9px] mt-0.5">Vault</span>
+          <button onclick="switchTab('settings')" id="tabSettings" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all">
+            <span class="text-sm">⚙️</span>
+            <span class="text-[9px] mt-0.5">Settings</span>
           </button>
         </nav>
 
@@ -539,7 +607,9 @@
       const chatTitle = document.getElementById('mockChatTitle');
       const chatStatus = document.getElementById('mockChatStatus');
 
-      const tabs = ['Chats', 'Communities', 'Ai', 'Vault'];
+      const settFeed = document.getElementById('mockSettingsFeed');
+
+      const tabs = ['Chats', 'Communities', 'Ai', 'Settings'];
       tabs.forEach(t => {
         const btn = document.getElementById('tab' + t);
         if (btn) btn.className = "flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all";
@@ -549,6 +619,7 @@
         document.getElementById('tabChats').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
         chatFeed.classList.remove('hidden');
         commFeed.classList.add('hidden');
+        settFeed.classList.add('hidden');
         inputBar.classList.remove('hidden');
         chatTitle.textContent = "Resence AI";
         chatStatus.textContent = isOnline ? "Ready to assist" : "Paused (No Internet)";
@@ -556,6 +627,7 @@
         document.getElementById('tabCommunities').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
         chatFeed.classList.add('hidden');
         commFeed.classList.remove('hidden');
+        settFeed.classList.add('hidden');
         inputBar.classList.add('hidden');
         chatTitle.textContent = "Campus Communities";
         chatStatus.textContent = "100% Online (No SMS used)";
@@ -563,12 +635,44 @@
         document.getElementById('tabAi').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
         chatFeed.classList.remove('hidden');
         commFeed.classList.add('hidden');
+        settFeed.classList.add('hidden');
         inputBar.classList.remove('hidden');
         chatTitle.textContent = "Resence AI Companion";
         chatStatus.textContent = isOnline ? "Active • 2.5 Flash" : "Disabled (Offline)";
-      } else if (tab === 'vault') {
-        document.getElementById('tabVault').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
-        promptGhostPin();
+      } else if (tab === 'settings') {
+        document.getElementById('tabSettings').className = "flex flex-col items-center text-emerald-600 dark:text-emerald-400 font-bold transition-all";
+        chatFeed.classList.add('hidden');
+        commFeed.classList.add('hidden');
+        settFeed.classList.remove('hidden');
+        inputBar.classList.add('hidden');
+        chatTitle.textContent = "Profile & Settings";
+        chatStatus.textContent = "Phone-Linked Account";
+      }
+    }
+
+    function editBio() {
+      const current = document.getElementById('bioText').textContent;
+      const updated = prompt("Update your WeResence Bio:", current);
+      if (updated && updated.trim()) {
+        document.getElementById('bioText').textContent = updated.trim();
+      }
+    }
+
+    let googleLinked = true;
+    function toggleGoogleLink() {
+      googleLinked = !googleLinked;
+      const status = document.getElementById('googleLinkStatus');
+      if (googleLinked) {
+        status.textContent = "piyush@resence.in (Connected)";
+      } else {
+        status.textContent = "Not connected (Tap to link Google account)";
+      }
+    }
+
+    function handleLogout() {
+      if (confirm("Are you sure you want to log out of WeResence? Your encrypted vault will be locked.")) {
+        alert("Logged out successfully. Enter phone number to sign back in.");
+        switchTab('chats');
       }
     }
 
