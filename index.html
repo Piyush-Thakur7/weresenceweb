@@ -691,6 +691,7 @@
       showAlert("Opening Google Identity Picker...", "info");
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         const result = await fbAuth.signInWithPopup(provider);
         onAuthSuccess(result.user);
       } catch (err) {
@@ -704,12 +705,13 @@
     }
 
     async function handleSendPhoneOtp() {
-      const phoneInput = document.getElementById('inputPhone').value.trim();
-      if (!phoneInput) {
-        showAlert("Please enter a valid 10-digit mobile number.", "error");
+      const rawInput = document.getElementById('inputPhone').value.trim();
+      const cleaned = rawInput.replace(/[\s\-\(\)]/g, '');
+      if (!cleaned) {
+        showAlert("Please enter a valid mobile number.", "error");
         return;
       }
-      const fullPhone = phoneInput.startsWith('+') ? phoneInput : `+91${phoneInput.replace(/\s+/g, '')}`;
+      const fullPhone = cleaned.startsWith('+') ? cleaned : `+91${cleaned}`;
 
       showAlert("Routing free SMS OTP via Google Firebase...", "info");
       setupRecaptcha();
@@ -720,8 +722,15 @@
         showAlert("✅ Free SMS OTP dispatched! Enter code below.", "success");
         document.getElementById('phoneInputStep').classList.add('hidden');
         document.getElementById('otpVerifyStep').classList.remove('hidden');
+        setTimeout(() => document.getElementById('inputOtp').focus(), 150);
       } catch (err) {
         console.error("Phone OTP send error:", err);
+        if (window.recaptchaVerifier) {
+          try {
+            window.recaptchaVerifier.clear();
+            window.recaptchaVerifier = null;
+          } catch(e) {}
+        }
         if (err.code === "auth/unauthorized-domain") {
           showAlert("Domain needs authorization in Firebase. Use the One-Tap Fast Login below to test instantly!", "error");
         } else {
