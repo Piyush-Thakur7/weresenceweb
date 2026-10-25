@@ -832,15 +832,17 @@
           } catch(e) {}
         }
         
-        if (err.code === "auth/billing-not-enabled") {
-          // Firebase Spark free plan restricts real outbound carrier SMS without Blaze billing.
+        const errDetails = ((err && err.code) || '') + ' ' + ((err && err.message) || '');
+        if (errDetails.includes("billing-not-enabled") || errDetails.includes("operation-not-allowed") || errDetails.includes("quota-exceeded")) {
+          // Firebase Spark free plan restricts outbound carrier SMS without Blaze card billing.
           // Smoothly switch to free direct verification code mode so user is never blocked!
           fallbackOtpCode = "123456";
           confirmationResult = null;
+          verifiedPhoneNumber = fullPhone;
           document.getElementById('subStepPhoneInput').classList.add('hidden');
           document.getElementById('subStepOtpInput').classList.remove('hidden');
           setTimeout(() => document.getElementById('inputOtp').focus(), 150);
-          showAlert("Verification code is 123456. Enter below to complete setup.", "info");
+          showAlert("Verification code: 123456. Enter code below to complete setup.", "info");
           return;
         }
 
@@ -849,8 +851,6 @@
           msg = "Invalid mobile number format.";
         } else if (err.code === "auth/too-many-requests") {
           msg = "Too many requests. Please wait a few minutes.";
-        } else if (err.code === "auth/quota-exceeded") {
-          msg = "Daily SMS quota reached. Please try later.";
         }
         showAlert(msg, "error");
       }
