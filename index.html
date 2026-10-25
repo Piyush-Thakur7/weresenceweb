@@ -1178,15 +1178,7 @@
         }
         localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
         
-        document.getElementById('userDisplayName').textContent = currentUserProfile.display_name || "WeResence User";
-        document.getElementById('userHandle').textContent = currentUserProfile.resence_id || "@user";
-        document.getElementById('settingsPhone').textContent = currentUserProfile.phone || verifiedPhoneNumber;
-        document.getElementById('settingsEmail').textContent = currentUserProfile.email || verifiedGoogleUser.email;
-        if (currentUserProfile.avatar_url) {
-          document.getElementById('userAvatarImg').src = currentUserProfile.avatar_url;
-          const sThumb = document.getElementById('settingsAvatarThumb');
-          if (sThumb) sThumb.src = currentUserProfile.avatar_url;
-        }
+        applyProfileToUI(currentUserProfile);
 
         showAlert("Account verified. Welcome back!", "success");
         setTimeout(() => showView('viewPinLock'), 400);
@@ -1209,15 +1201,16 @@
     }
 
     let pendingSetupAvatarUrl = null;
-    function handleSetupAvatarSelect(e) {
+    async function handleSetupAvatarSelect(e) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        pendingSetupAvatarUrl = event.target.result;
-        document.getElementById('setupAvatarImg').src = pendingSetupAvatarUrl;
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 300, 0.85);
+        pendingSetupAvatarUrl = compressed;
+        document.getElementById('setupAvatarImg').src = compressed;
+      } catch (err) {
+        console.error("Avatar compression note:", err);
+      }
     }
 
     // COMPLETE PROFILE SETUP (NEW SIGN-UP SUBMIT)
@@ -1299,6 +1292,128 @@
       }
     }
 
+    function applyProfileToUI(profile) {
+      if (!profile) return;
+      const nameEl = document.getElementById('userDisplayName');
+      const handleEl = document.getElementById('userHandle');
+      const avatarImgEl = document.getElementById('userAvatarImg');
+      const sThumbEl = document.getElementById('settingsAvatarThumb');
+      const sNameEl = document.getElementById('settingsProfileName');
+      const sPhoneEl = document.getElementById('settingsPhone');
+      const sEmailEl = document.getElementById('settingsEmail');
+
+      if (nameEl) nameEl.textContent = profile.display_name || "WeResence User";
+      if (handleEl) handleEl.textContent = profile.resence_id || "@user";
+      if (sNameEl) sNameEl.textContent = profile.display_name || "WeResence User";
+      if (sPhoneEl) sPhoneEl.textContent = profile.phone || "+91 XXXXXXXXXX";
+      if (sEmailEl) sEmailEl.textContent = profile.email || "Not linked";
+
+      if (profile.avatar_url) {
+        if (avatarImgEl) avatarImgEl.src = profile.avatar_url;
+        if (sThumbEl) sThumbEl.src = profile.avatar_url;
+      }
+    }
+
+    async function syncUserProfileFromCloud() {
+      if (!dbClient || !currentUserProfile) return;
+      try {
+        const myId = currentUserProfile.id;
+        const myPhone = currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
+        const myEmail = currentUserProfile.email || '';
+
+        const orFilters = [];
+        if (myId) orFilters.push(`id.eq.${myId}`);
+        if (myEmail) orFilters.push(`email.eq.${myEmail}`);
+        if (myPhone) orFilters.push(`phone.ilike.%${myPhone}%`);
+
+        if (orFilters.length > 0) {
+          const { data: prof } = await dbClient
+            .from('profiles')
+            .select('*')
+            .or(orFilters.join(','))
+            .maybeSingle();
+
+          if (prof) {
+            currentUserProfile = { ...currentUserProfile, ...prof };
+            localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
+            applyProfileToUI(currentUserProfile);
+          }
+        }
+      } catch (e) {
+        console.warn("Cloud profile sync error:", e);
+      }
+    }
+
+    function compressImage(file, maxDimension = 300, quality = 0.85) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              }
+            } else {
+              if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = () => resolve(e.target.result);
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) {
+        return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      }
+      try {
+        const d = new Date(timestamp);
+        if (isNaN(d.getTime())) return timestamp;
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function formatRelativeTime(timestamp) {
+      if (!timestamp) return '';
+      try {
+        const d = new Date(timestamp);
+        if (isNaN(d.getTime())) return '';
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = d.toDateString() === yesterday.toDateString();
+
+        if (isToday) {
+          return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        } else if (isYesterday) {
+          return 'Yesterday';
+        } else {
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+      } catch (e) {
+        return '';
+      }
+    }
+
     function evaluatePin() {
       const masterPin = localStorage.getItem('weresence_pin') || '1234';
       if (enteredPin === "0000") {
@@ -1309,9 +1424,11 @@
         enteredPin = "";
         updatePinDots();
         showView('viewMainApp');
+        applyProfileToUI(currentUserProfile);
         renderConversationsList();
         selectThread(activeThreadId);
         subscribeToRealtime();
+        syncUserProfileFromCloud();
         syncConversationsFromSupabase();
       } else {
         alert("Incorrect PIN. Please try again.");
@@ -1372,7 +1489,7 @@
       const myPhone = currentUserProfile && currentUserProfile.phone ? currentUserProfile.phone.replace(/\D/g, '').slice(-10) : '';
       const myId = currentUserProfile ? currentUserProfile.id : '';
 
-      return [...DEFAULT_THREADS, ...customThreads].filter(t => {
+      const raw = [...DEFAULT_THREADS, ...customThreads].filter(t => {
         if (t.id === 'ai-companion') return true;
         if (myId && (t.id === myId || t.phone === myId)) return false;
         if (myPhone) {
@@ -1381,6 +1498,28 @@
         }
         return true;
       });
+
+      // Deduplicate contacts by 10-digit phone so "Aishwarya" and "Aishwarya Bhati" never duplicate
+      const seenPhones = new Set();
+      const seenIds = new Set();
+      const deduplicated = [];
+
+      for (const t of raw) {
+        if (t.id === 'ai-companion') {
+          deduplicated.push(t);
+          continue;
+        }
+        if (seenIds.has(t.id)) continue;
+        seenIds.add(t.id);
+
+        const phoneDigits = (t.phone || '').replace(/\D/g, '').slice(-10);
+        if (phoneDigits) {
+          if (seenPhones.has(phoneDigits)) continue;
+          seenPhones.add(phoneDigits);
+        }
+        deduplicated.push(t);
+      }
+      return deduplicated;
     }
 
     function getThreadById(id) {
@@ -1399,7 +1538,6 @@
         const div = document.createElement('div');
         div.id = `thread-${thread.id}`;
         div.onclick = () => selectThread(thread.id);
-        div.className = `p-3.5 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors ${isActive ? 'bg-white/5' : ''}`;
         
         let avatarMarkup = '';
         if (thread.avatarImg) {
@@ -1409,16 +1547,21 @@
           avatarMarkup = `<div class="w-11 h-11 rounded-2xl ${bgClass} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${thread.avatar || '👤'}</div>`;
         }
 
-        // Get latest message preview if exists
+        // Get latest message preview and formatted timestamp
         const msgs = threadMessages[thread.id] || [];
         const lastMsg = msgs[msgs.length - 1];
         let previewText = thread.bio || 'Available on WeResence';
+        let previewTime = (thread.type === 'AI') ? 'Live' : 'E2EE';
         if (lastMsg) {
           if (lastMsg.message_type === 'IMAGE') previewText = '📷 Photo';
           else if (lastMsg.message_type === 'VIDEO') previewText = '📹 Video';
           else if (lastMsg.message_type === 'VOICE_NOTE' || lastMsg.message_type === 'AUDIO') previewText = '🎙️ Voice note';
           else if (lastMsg.message_type === 'DOCUMENT') previewText = `📄 ${lastMsg.file_name || 'Document'}`;
           else if (lastMsg.text) previewText = lastMsg.text;
+
+          if (lastMsg.created_at || lastMsg.time) {
+            previewTime = formatRelativeTime(lastMsg.created_at) || lastMsg.time || previewTime;
+          }
         }
 
         const deleteBtnMarkup = (thread.id !== 'ai-companion')
@@ -1432,7 +1575,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
               <h4 class="text-xs font-bold text-white truncate">${thread.name}</h4>
-              <span class="text-[9px] ${thread.type === 'AI' ? 'text-emerald-400' : 'text-slate-500'} font-mono">${thread.type === 'AI' ? 'Live' : 'E2EE'}</span>
+              <span class="text-[9px] ${thread.type === 'AI' ? 'text-emerald-400' : 'text-slate-400'} font-mono">${previewTime}</span>
             </div>
             <p class="text-[11px] text-slate-400 truncate mt-0.5">${previewText}</p>
           </div>
@@ -1452,6 +1595,8 @@
         container.appendChild(cta);
       }
     }
+
+
 
     function promptDeleteCurrentChat() {
       const current = getThreadById(activeThreadId);
@@ -1828,6 +1973,7 @@
         else if (file.type.startsWith('video/')) msgType = 'VIDEO';
         else if (file.type.startsWith('audio/')) msgType = 'AUDIO';
 
+        const nowIso = new Date().toISOString();
         const fileMsg = {
           id: 'msg_' + Date.now(),
           sender_id: currentUserProfile ? currentUserProfile.id : 'user',
@@ -1838,7 +1984,8 @@
           file_size: formatFileSize(file.size),
           text: file.name,
           transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
-          time: 'Just now'
+          time: formatTime(nowIso),
+          created_at: nowIso
         };
         saveAndRenderMessage(fileMsg);
       };
@@ -1908,6 +2055,7 @@
         const reader = new FileReader();
         reader.onloadend = () => {
           const dataUrl = reader.result;
+          const nowIso = new Date().toISOString();
           const voiceMsg = {
             id: 'msg_' + Date.now(),
             sender_id: currentUserProfile ? currentUserProfile.id : 'user',
@@ -1917,7 +2065,8 @@
             duration: durationStr,
             text: `Voice Note (${durationStr})`,
             transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
-            time: 'Just now'
+            time: formatTime(nowIso),
+            created_at: nowIso
           };
           saveAndRenderMessage(voiceMsg);
         };
@@ -2002,7 +2151,7 @@
                   media_url: dbMsg.media_url,
                   file_name: dbMsg.media_caption,
                   transport: dbMsg.transport_mode || 'Encrypted Internet',
-                  time: 'Delivered',
+                  time: formatTime(dbMsg.created_at),
                   created_at: dbMsg.created_at
                 };
                 msgs.push(converted);
@@ -2025,6 +2174,7 @@
       if (!text) return;
       input.value = '';
 
+      const nowIso = new Date().toISOString();
       const msg = {
         id: 'msg_' + Date.now(),
         sender_id: currentUserProfile ? (currentUserProfile.phone || currentUserProfile.id) : 'user',
@@ -2032,7 +2182,8 @@
         message_type: 'TEXT',
         text: text,
         transport: isSimulatingOffline ? 'Cellular SMS' : 'Encrypted Internet',
-        time: 'Just now'
+        time: formatTime(nowIso),
+        created_at: nowIso
       };
 
       saveAndRenderMessage(msg);
@@ -2159,12 +2310,18 @@
         contentHtml = `<p class="leading-relaxed break-words">${msg.text || ''}</p>`;
       }
 
+      const timeStr = formatTime(msg.created_at || msg.time);
+      const transportStr = msg.transport || 'Encrypted Internet';
+
       if (msg.type === 'outgoing') {
         div.className = "flex justify-end";
         div.innerHTML = `
           <div class="max-w-[85%] sm:max-w-[80%] p-3.5 rounded-2xl rounded-tr-none bg-emerald-500 text-slate-950 font-medium shadow-md space-y-1">
             ${contentHtml}
-            <div class="text-[9px] font-mono text-slate-900/75 text-right">${msg.transport || 'Encrypted'} ✓✓</div>
+            <div class="flex items-center justify-end gap-1.5 text-[10px] font-mono text-slate-950/75 text-right pt-0.5">
+              <span>${timeStr}</span>
+              <span class="text-xs font-bold leading-none">✓✓</span>
+            </div>
           </div>
         `;
       } else if (msg.type === 'ai') {
@@ -2175,7 +2332,10 @@
           </div>
           <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-slate-200 space-y-1">
             ${contentHtml}
-            <div class="text-[9px] font-mono text-emerald-400 opacity-70">${msg.transport || 'Encrypted'}</div>
+            <div class="flex items-center justify-between text-[10px] font-mono text-emerald-400 opacity-70 pt-0.5">
+              <span>Resence AI Companion</span>
+              <span>${timeStr}</span>
+            </div>
           </div>
         `;
       } else {
@@ -2183,7 +2343,10 @@
         div.innerHTML = `
           <div class="p-3.5 rounded-2xl rounded-tl-none bg-white/10 text-white border border-white/5 shadow-sm space-y-1">
             ${contentHtml}
-            <div class="text-[9px] font-mono text-slate-400 text-right">${msg.transport || 'Encrypted'}</div>
+            <div class="flex items-center justify-end gap-1.5 text-[10px] font-mono text-slate-400 text-right pt-0.5">
+              <span>${timeStr}</span>
+              <span class="text-[9px] opacity-60">• ${transportStr}</span>
+            </div>
           </div>
         `;
       }
@@ -2392,7 +2555,7 @@
             media_url: newMsg.media_url,
             file_name: newMsg.media_caption,
             transport: newMsg.transport_mode || 'Encrypted Internet',
-            time: 'Just now',
+            time: formatTime(newMsg.created_at),
             created_at: newMsg.created_at
           };
 
@@ -2424,39 +2587,72 @@
       const myId = currentUserProfile.id;
 
       try {
-        const { data: messages, error } = await dbClient
+        // 1. Fetch conversations from conversations table
+        const { data: convList } = await dbClient
+          .from('conversations')
+          .select('*')
+          .ilike('id', `%${myPhone}%`);
+
+        // 2. Fetch messages involving current user
+        const { data: messages } = await dbClient
           .from('messages')
           .select('conversation_id, sender_id, recipient_id, encrypted_payload, message_type, media_url, media_caption, created_at')
           .or(`sender_id.eq.${myId},recipient_id.eq.${myId},recipient_id.ilike.%${myPhone}%,conversation_id.ilike.%${myPhone}%`)
           .order('created_at', { ascending: false })
           .limit(100);
 
-        if (error || !messages || messages.length === 0) return;
-
         const convMap = new Map();
-        messages.forEach(m => {
-          if (m.conversation_id && !convMap.has(m.conversation_id)) {
-            convMap.set(m.conversation_id, m);
-          }
-        });
+        if (convList) {
+          convList.forEach(c => {
+            if (c.id && c.id.startsWith('conv_')) convMap.set(c.id, null);
+          });
+        }
+
+        if (messages && messages.length > 0) {
+          messages.forEach(m => {
+            if (m.conversation_id) {
+              if (!convMap.has(m.conversation_id) || !convMap.get(m.conversation_id)) {
+                convMap.set(m.conversation_id, m);
+              }
+              // Sync messages into local threadMessages cache
+              if (!threadMessages[m.conversation_id]) threadMessages[m.conversation_id] = [];
+              const exists = threadMessages[m.conversation_id].some(ex => ex.id === m.id || (ex.text === m.encrypted_payload && ex.created_at === m.created_at));
+              if (!exists) {
+                const isMine = (m.sender_id === myId) || (myPhone && m.sender_id && m.sender_id.includes(myPhone));
+                threadMessages[m.conversation_id].unshift({
+                  id: m.id || ('sync_' + Math.random()),
+                  type: isMine ? 'outgoing' : 'incoming',
+                  message_type: m.message_type || 'TEXT',
+                  text: m.encrypted_payload,
+                  media_url: m.media_url,
+                  file_name: m.media_caption,
+                  transport: 'Encrypted Internet',
+                  time: formatTime(m.created_at),
+                  created_at: m.created_at
+                });
+              }
+            }
+          });
+          localStorage.setItem('weresence_thread_messages', JSON.stringify(threadMessages));
+        }
 
         let threadsUpdated = false;
         for (const [convId, latestMsg] of convMap.entries()) {
           if (convId === 'ai-companion' || convId === 'comm-glbim' || convId === 'peer-founder') continue;
 
-          const exists = customThreads.some(t => t.id === convId);
+          let peerPhone = '';
+          if (convId.startsWith('conv_')) {
+            const parts = convId.replace('conv_', '').split('_');
+            peerPhone = parts[0] === myPhone ? parts[1] : parts[0];
+          }
+          if (!peerPhone && latestMsg) {
+            peerPhone = latestMsg.sender_id === myId ? latestMsg.recipient_id : latestMsg.sender_id;
+          }
+
+          if (!peerPhone || (myPhone && peerPhone === myPhone)) continue;
+
+          const exists = customThreads.some(t => t.id === convId || (t.phone && t.phone.replace(/\D/g, '').slice(-10) === peerPhone.replace(/\D/g, '').slice(-10)));
           if (!exists) {
-            let peerPhone = '';
-            if (convId.startsWith('conv_')) {
-              const parts = convId.replace('conv_', '').split('_');
-              peerPhone = parts[0] === myPhone ? parts[1] : parts[0];
-            }
-            if (!peerPhone) {
-              peerPhone = latestMsg.sender_id === myId ? latestMsg.recipient_id : latestMsg.sender_id;
-            }
-
-            if (!peerPhone || (myPhone && peerPhone === myPhone)) continue;
-
             let peerName = `+91 ${peerPhone}`;
             let peerAvatarImg = null;
             let peerBio = 'Available on WeResence';
@@ -2528,7 +2724,7 @@
                 media_url: dbMsg.media_url,
                 file_name: dbMsg.media_caption,
                 transport: dbMsg.transport_mode || 'Encrypted Internet',
-                time: 'Delivered',
+                time: formatTime(dbMsg.created_at),
                 created_at: dbMsg.created_at
               };
               msgs.push(converted);
@@ -2594,15 +2790,16 @@
       document.getElementById('modalEditProfile').classList.add('hidden');
     }
 
-    function handleAvatarFileSelect(e) {
+    async function handleAvatarFileSelect(e) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        pendingAvatarDataUrl = event.target.result;
-        document.getElementById('editProfileAvatarImg').src = pendingAvatarDataUrl;
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 300, 0.85);
+        pendingAvatarDataUrl = compressed;
+        document.getElementById('editProfileAvatarImg').src = compressed;
+      } catch (err) {
+        console.error("Avatar compression note:", err);
+      }
     }
 
     async function saveProfileChanges() {
@@ -2912,17 +3109,8 @@
             localStorage.setItem('weresence_user', JSON.stringify(currentUserProfile));
           }
 
-          document.getElementById('userDisplayName').textContent = currentUserProfile.display_name || "WeResence User";
-          document.getElementById('userHandle').textContent = currentUserProfile.resence_id || "@user";
-          document.getElementById('settingsPhone').textContent = currentUserProfile.phone || "+91 XXXXXXXXXX";
-          document.getElementById('settingsEmail').textContent = currentUserProfile.email || "th.piyushsingh2007@gmail.com";
-          if (currentUserProfile.avatar_url) {
-            document.getElementById('userAvatarImg').src = currentUserProfile.avatar_url;
-            const sThumb = document.getElementById('settingsAvatarThumb');
-            if (sThumb) sThumb.src = currentUserProfile.avatar_url;
-          }
-          const sName = document.getElementById('settingsProfileName');
-          if (sName) sName.textContent = currentUserProfile.display_name || "WeResence User";
+          applyProfileToUI(currentUserProfile);
+          syncUserProfileFromCloud();
 
           // Clean mock channels & self-chat from local storage
           try {
